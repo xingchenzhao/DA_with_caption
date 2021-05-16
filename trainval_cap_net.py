@@ -231,6 +231,10 @@ def parse_args():
                         help='Use glove pretrained embedding',
                         default=True,
                         type=bool)
+    parser.add_argument('--cap_resume',
+                        help='resume the training',
+                        default=False,
+                        type=bool)
     args = parser.parse_args()
     return args
 
@@ -432,6 +436,7 @@ if __name__ == '__main__':
 
     lr = cfg.TRAIN.LEARNING_RATE
     lr = args.lr
+    iter_num = 0
 
     params = []
     for key, value in dict(fasterRCNN.named_parameters()).items():
@@ -459,13 +464,14 @@ if __name__ == '__main__':
     if args.resume:
         load_name = os.path.join(
             output_dir,
-            'faster_rcnn_{}_{}_{}.pth'.format(args.checksession,
-                                              args.checkepoch,
-                                              args.checkpoint))
+            'cap_faster_rcnn_{}_{}_{}.pth'.format(args.checksession,
+                                                  args.checkepoch,
+                                                  args.checkpoint))
         print("loading checkpoint %s" % (load_name))
         checkpoint = torch.load(load_name)
         args.session = checkpoint['session']
         args.start_epoch = checkpoint['epoch']
+        iter_num = checkpoint['iter_num']
         fasterRCNN.load_state_dict(checkpoint['model'])
         optimizer.load_state_dict(checkpoint['optimizer'])
         lr = optimizer.param_groups[0]['lr']
@@ -496,10 +502,10 @@ if __name__ == '__main__':
             lambda p: p.requires_grad, lstm_decoder.parameters()),
                                           lr=args.lstm_lr)
         lstm_criterion = nn.CrossEntropyLoss()
+
         if args.cuda:
             lstm_decoder.cuda()
-            if args.mGPUs:
-                lstm_decoder = nn.DataParallel(lstm_decoder)
+
         # train and validate the captioning model
         val_imdb, val_roidb, val_ratio_list, val_ratio_index, _ = combined_roidb(
             args.imdbval_name)
@@ -530,7 +536,6 @@ if __name__ == '__main__':
         )
         exit(0)
 
-    iter_num = 0
     has_adjusted_lr = False
     for epoch in range(args.start_epoch, args.max_epochs + 1):
         if iter_num >= args.max_iter:
@@ -551,11 +556,7 @@ if __name__ == '__main__':
                 adjust_learning_rate(optimizer, args.lr_decay_gamma)
                 lr *= args.lr_decay_gamma
                 has_adjusted_lr = True
-            base_lr = lr
-            if epoch == 1 and step <= args.warm_up:
-                lr = base_lr * get_lr_at_iter(step / args.warm_up)
-            else:
-                lr = base_lr
+
             data = next(data_iter)
             with torch.no_grad():
                 im_data.resize_(data[0].size()).copy_(data[0])
@@ -626,13 +627,15 @@ if __name__ == '__main__':
                 start = time.time()
         save_name = os.path.join(
             output_dir,
-            'faster_rcnn_{}_{}_{}.pth'.format(args.session, epoch, step))
+            'cap_faster_rcnn_{}_{}_{}.pth'.format(args.session, epoch, step))
         save_checkpoint(
             {
                 'session':
                 args.session,
                 'epoch':
                 epoch + 1,
+                'iter_num':
+                iter_num + 1,
                 'model':
                 fasterRCNN.module.state_dict()
                 if args.mGPUs else fasterRCNN.state_dict(),
@@ -641,19 +644,21 @@ if __name__ == '__main__':
                 'pooling_mode':
                 cfg.POOLING_MODE,
                 'class_agnostic':
-                args.class_agnostic,
+                args.class_agnostic
             }, save_name)
         print('save model: {}'.format(save_name))
 ################################################saving the final model #############################################################
     save_name = os.path.join(
-        output_dir, 'faster_rcnn_{}_{}_{}.pth'.format(args.session, epoch,
-                                                      iter_num))
+        output_dir,
+        'cap_faster_rcnn_{}_{}_{}.pth'.format(args.session, epoch, iter_num))
     save_checkpoint(
         {
             'session':
             args.session,
             'epoch':
             epoch + 1,
+            'iter_num':
+            iter_num + 1,
             'model':
             fasterRCNN.module.state_dict()
             if args.mGPUs else fasterRCNN.state_dict(),

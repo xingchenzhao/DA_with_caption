@@ -25,13 +25,21 @@ from model.utils.net_utils import save_checkpoint
 from model.utils.config import cfg
 
 
-def train_caption(args, dataloader, lstm_criterion, faster_rcnn,
-                  faster_rcnn_optimizer, lstm, lstm_optimizer):
+def train_caption(args,
+                  dataloader,
+                  lstm_criterion,
+                  faster_rcnn,
+                  faster_rcnn_optimizer,
+                  lstm,
+                  lstm_optimizer,
+                  iter_num=0):
+    if args.mGPUs:
+        lstm_decoder = nn.DataParallel(lstm_decoder)
     grad_clip = 5.  # clip gradients at an absolute value of
     fine_tune(faster_rcnn.RCNN_base, freeze=True)
     faster_rcnn.train()
     lstm.train()
-    iter_num = 0
+    iter_num = iter_num
     has_finetuned = False
     has_adjusted_lr = False
     for epoch in range(args.start_epoch, args.max_epochs + 1):
@@ -56,6 +64,8 @@ def train_caption(args, dataloader, lstm_criterion, faster_rcnn,
                     args.session,
                     'epoch':
                     epoch + 1,
+                    'iter_num':
+                    iter_num + 1,
                     'model':
                     faster_rcnn.module.state_dict()
                     if args.mGPUs else faster_rcnn.state_dict(),
@@ -76,6 +86,8 @@ def train_caption(args, dataloader, lstm_criterion, faster_rcnn,
                     args.session,
                     'epoch':
                     epoch + 1,
+                    'iter_num':
+                    iter_num + 1,
                     'model':
                     lstm.module.state_dict()
                     if args.mGPUs else lstm.state_dict(),
@@ -109,7 +121,7 @@ def train_caption(args, dataloader, lstm_criterion, faster_rcnn,
             data_time.update(time.time() - start)
             imgs = faster_rcnn.RCNN_base(imgs)
             caption_lengths, _ = caplen.squeeze(1).sort(dim=0, descending=True)
-            decode_lengths = (caption_lengths - 1).tolist()
+            # decode_lengths = (caption_lengths - 1).tolist()
             # args.decode_lengths = decode_lengths
             scores, caps_sorted, decode_lengths, alphas, sort_ind = lstm(
                 imgs, captions, caplen)
@@ -197,6 +209,8 @@ def train_caption(args, dataloader, lstm_criterion, faster_rcnn,
             args.session,
             'epoch':
             epoch + 1,
+            'iter_num':
+            iter_num + 1,
             'model':
             faster_rcnn.module.state_dict()
             if args.mGPUs else faster_rcnn.state_dict(),
@@ -215,6 +229,7 @@ def train_caption(args, dataloader, lstm_criterion, faster_rcnn,
         {
             'session': args.session,
             'epoch': epoch + 1,
+            'iter_num': iter_num + 1,
             'model':
             lstm.module.state_dict() if args.mGPUs else lstm.state_dict(),
             'optimizer': lstm_optimizer.state_dict(),

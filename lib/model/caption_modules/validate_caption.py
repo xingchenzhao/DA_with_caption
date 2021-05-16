@@ -50,9 +50,9 @@ def validate_caption(args, val_dataloader, lstm_criterion, faster_rcnn, lstm):
             caplen = data[5].cuda()
             imgs = faster_rcnn.RCNN_base(imgs)
             caption_lengths, _ = caplen.squeeze(1).sort(dim=0, descending=True)
-            decode_lengths = (caption_lengths - 1).tolist()
-            args.decode_lengths = decode_lengths
-            scores, caps_sorted, alphas, sort_ind = lstm(
+            # decode_lengths = (caption_lengths - 1).tolist()
+            # args.decode_lengths = decode_lengths
+            scores, caps_sorted, decode_lengths, alphas, sort_ind = lstm(
                 imgs, captions, caplen)
             targets = caps_sorted[:, 1:]
             scores_copy = scores.clone()
