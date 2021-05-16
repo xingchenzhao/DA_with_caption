@@ -1,4 +1,4 @@
-CUDA_VISIBLE_DEVICES=2,3 python trainval_cap_net.py \
+CUDA_VISIBLE_DEVICES=0,1 python trainval_net.py \
                    --dataset pascal_voc --net vgg16 \
                    --bs 12 \
                    --nw 6 \

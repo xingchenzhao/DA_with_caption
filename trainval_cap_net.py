@@ -6,7 +6,7 @@
 from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
-
+import pickle
 import _init_paths
 import os
 import sys
@@ -33,13 +33,9 @@ from model.utils.net_utils import weights_normal_init, save_net, load_net, \
 from model.faster_rcnn.vgg16 import vgg16
 from model.faster_rcnn.resnet import resnet
 from model.caption_modules.model import DecoderWithAttention
-
-
-def lstm_parameters():
-    emb_dim = 512  # dimension of word embeddings
-    attention_dim = 512  # dimension of attention linear layers
-    decoder_dim = 512  # dimension of decoder RNN
-    return emb_dim, attention_dim, decoder_dim
+from torch.nn.utils.rnn import pack_padded_sequence
+from model.caption_modules.caption_main import caption_main
+import copy
 
 
 def parse_args():
@@ -70,7 +66,11 @@ def parse_args():
     parser.add_argument('--epochs',
                         dest='max_epochs',
                         help='number of epochs to train',
-                        default=20,
+                        default=200,
+                        type=int)
+    parser.add_argument('--max_iter',
+                        help='number of iterations to train',
+                        default=20000,
                         type=int)
     parser.add_argument('--disp_interval',
                         dest='disp_interval',
@@ -127,11 +127,13 @@ def parse_args():
                         help='starting learning rate',
                         default=0.001,
                         type=float)
-    parser.add_argument('--lr_decay_step',
-                        dest='lr_decay_step',
-                        help='step to do learning rate decay, unit is epoch',
-                        default=5,
-                        type=int)
+    parser.add_argument(
+        '--lr_decay_iter',
+        dest='lr_decay_iter',
+        help='iteration to do learning rate decay, unit is epoch',
+        default=14000,
+        type=int)
+
     parser.add_argument('--lr_decay_gamma',
                         dest='lr_decay_gamma',
                         help='learning rate decay ratio',
@@ -181,38 +183,54 @@ def parse_args():
                         help='save_model_dir',
                         default="cityscape_multi",
                         type=str)
-    #caption model hyperparameters
+    #caption hyerparameter
     parser.add_argument('--caption_for_da',
-                        dest='use caption for domain adaptation',
-                        default=False,
-                        type=bool)
-    parser.add_argument('--caption_ft_begin_epoch',
-                        dest='caption fine tune begin epoch',
-                        default=10,
+                        help='use caption for domain adaptation',
+                        action='store_true')
+    parser.add_argument('--caption_ft_begin_iter',
+                        help='caption fine tune begin iterations',
+                        default=11000,
                         type=int)
-    parser.add_argument('--lstm_lr',
-                        dest='learning rate for lstm',
-                        default=0.0005,
-                        type=float)
+    parser.add_argument('--caption_total_iter',
+                        help='caption fine tune begin iterations',
+                        default=15000,
+                        type=int)
+    parser.add_argument(
+        '--cap_no_ft_bs',
+        help=
+        'batch size when training the caption model without finetuning the cnn',
+        default=8)
+    parser.add_argument(
+        '--cap_ft_bs',
+        help=
+        'batch size when training the caption model with finetuning the cnn',
+        default=4)
+    parser.add_argument('--lstm_lr', default=4e-4, type=float)
     parser.add_argument('--attention_dim',
-                        dest='dimension of attention linear layers',
                         help='dimension of attention linear layers',
                         default=512,
                         type=int)
     parser.add_argument('--embed_dim',
-                        dest='dimension of word embeddings',
                         help='dimension of word embeddings',
                         default=512,
                         type=int)
     parser.add_argument('--decoder_dim',
-                        dest='dimension of decoder RNN',
                         help='dimension of decoder RNN',
                         default=512,
                         type=int)
-    parser.add_argument('--dropout',
-                        dest='dropout rate',
-                        default=0.5,
+    parser.add_argument('--dropout', default=0.5, type=float)
+    parser.add_argument('--alpha_c',
+                        help='alpha rate for attention',
+                        default=1,
                         type=float)
+    parser.add_argument('--cap_val_iter',
+                        help='validate iterations for caption model',
+                        default=5000,
+                        type=int)
+    parser.add_argument('--use_glove',
+                        help='Use glove pretrained embedding',
+                        default=True,
+                        type=bool)
     args = parser.parse_args()
     return args
 
@@ -248,7 +266,6 @@ class sampler(Sampler):
 
 
 if __name__ == '__main__':
-
     args = parse_args()
 
     print('Called with args:')
@@ -333,6 +350,7 @@ if __name__ == '__main__':
     print('{:d} roidb entries'.format(len(roidb)))
 
     output_dir = args.save_dir + "/" + args.net + "/" + args.save_model_dir
+    args.output_dir = output_dir
     if not os.path.exists(output_dir):
         os.makedirs(output_dir)
 
@@ -344,7 +362,9 @@ if __name__ == '__main__':
     dataloader = torch.utils.data.DataLoader(dataset,
                                              batch_size=args.batch_size,
                                              sampler=sampler_batch,
-                                             num_workers=args.num_workers)
+                                             num_workers=args.num_workers,
+                                             drop_last=True,
+                                             pin_memory=True)
 
     #target data
     # tgt_imdb, tgt_roidb, tgt_ratio_list, tgt_ratio_index, _ = combined_roidb(
@@ -412,8 +432,6 @@ if __name__ == '__main__':
 
     lr = cfg.TRAIN.LEARNING_RATE
     lr = args.lr
-    #tr_momentum = cfg.TRAIN.MOMENTUM
-    #tr_momentum = args.momentum
 
     params = []
     for key, value in dict(fasterRCNN.named_parameters()).items():
@@ -438,12 +456,6 @@ if __name__ == '__main__':
     elif args.optimizer == "sgd":
         optimizer = torch.optim.SGD(params, momentum=cfg.TRAIN.MOMENTUM)
 
-    if args.caption_for_da:
-        lstm_decoder = DecoderWithAttention(attention_dim=args.attention_dim,
-                                            embed_dim=args.emb_dim,
-                                            decoder_dim=args.decoder_dim,
-                                            vocab_size=len(vocab),
-                                            dropout=args.dropout)
     if args.resume:
         load_name = os.path.join(
             output_dir,
@@ -466,22 +478,80 @@ if __name__ == '__main__':
 
     iters_per_epoch = int(train_size / args.batch_size)
 
-    if args.use_tfboard:
-        from tensorboardX import SummaryWriter
-        logger = SummaryWriter("logs")
+    if args.caption_for_da:
+        if args.use_glove:
+            glove_vectors = pickle.load(open('glove.6B/glove_words.pkl', 'rb'))
+            glove_vectors = torch.FloatTensor(glove_vectors)
+            args.embed_dim = 300
+            print('use glove embedding')
+        lstm_decoder = DecoderWithAttention(attention_dim=args.attention_dim,
+                                            embed_dim=args.embed_dim,
+                                            decoder_dim=args.decoder_dim,
+                                            vocab_size=len(vocab.idx2word),
+                                            dropout=args.dropout,
+                                            args=args)
+        lstm_decoder.load_pretrained_embeddings(glove_vectors)
+        lstm_decoder.fine_tune_embeddings(True)
+        lstm_optimizer = torch.optim.Adam(params=filter(
+            lambda p: p.requires_grad, lstm_decoder.parameters()),
+                                          lr=args.lstm_lr)
+        lstm_criterion = nn.CrossEntropyLoss()
+        if args.cuda:
+            lstm_decoder.cuda()
+            if args.mGPUs:
+                lstm_decoder = nn.DataParallel(lstm_decoder)
+        # train and validate the captioning model
+        val_imdb, val_roidb, val_ratio_list, val_ratio_index, _ = combined_roidb(
+            args.imdbval_name)
+        val_size = len(val_roidb)
 
+        val_sampler_batch = sampler(val_size, 1)
+
+        val_dataset = roibatchLoader(val_roidb, val_ratio_list, val_ratio_index, 1, \
+                                val_imdb.num_classes, training=True)
+
+        val_dataloader = torch.utils.data.DataLoader(
+            val_dataset,
+            batch_size=1,
+            sampler=val_sampler_batch,
+            num_workers=args.num_workers,
+            drop_last=True)
+        args.vocab = vocab
+
+        caption_main(
+            args,
+            dataloader,
+            val_dataloader,
+            lstm_criterion,
+            fasterRCNN.module if args.mGPUs else fasterRCNN,
+            copy.deepcopy(optimizer),
+            lstm_decoder,
+            lstm_optimizer,
+        )
+        exit(0)
+
+    iter_num = 0
+    has_adjusted_lr = False
     for epoch in range(args.start_epoch, args.max_epochs + 1):
+        if iter_num >= args.max_iter:
+            print(f"stopped at iterations {iter_num}")
+            break
+
         # setting to train mode
         fasterRCNN.train()
         loss_temp = 0
         start = time.time()
 
-        if epoch % (args.lr_decay_step + 1) == 0:
-            adjust_learning_rate(optimizer, args.lr_decay_gamma)
-            lr *= args.lr_decay_gamma
         data_iter = iter(dataloader)
-        base_lr = lr
         for step in range(iters_per_epoch):
+            if iter_num >= args.max_iter:
+                break
+            iter_num += 1
+            if iter_num == args.lr_decay_iter and not has_adjusted_lr:
+                adjust_learning_rate(optimizer, args.lr_decay_gamma)
+                lr *= args.lr_decay_gamma
+                has_adjusted_lr = True
+            base_lr = lr
             if epoch == 1 and step <= args.warm_up:
                 lr = base_lr * get_lr_at_iter(step / args.warm_up)
             else:
@@ -492,7 +562,7 @@ if __name__ == '__main__':
                 im_info.resize_(data[1].size()).copy_(data[1])
                 gt_boxes.resize_(data[2].size()).copy_(data[2])
                 num_boxes.resize_(data[3].size()).copy_(data[3])
-                if args.dataset == "coco":
+                if args.dataset == "coco_pascal_voc":
                     caption = data[4].cuda()
                     caplen = data[5].cuda()
 
@@ -501,10 +571,6 @@ if __name__ == '__main__':
             rpn_loss_cls, rpn_loss_box, \
             RCNN_loss_cls, RCNN_loss_bbox, \
             rois_label = fasterRCNN(im_data, im_info, gt_boxes, num_boxes)
-            # lstm_input = fasterRCNN.module.RCNN_base(
-            #     im_data)  #output as the input for LSTM and attention
-            # fasterRCNN.module._finetune_cnn(freeze=False)
-
 
             loss = rpn_loss_cls.mean() + rpn_loss_box.mean() \
                  + RCNN_loss_cls.mean() + RCNN_loss_bbox.mean()
@@ -558,7 +624,6 @@ if __name__ == '__main__':
 
                 loss_temp = 0
                 start = time.time()
-
         save_name = os.path.join(
             output_dir,
             'faster_rcnn_{}_{}_{}.pth'.format(args.session, epoch, step))
@@ -579,6 +644,24 @@ if __name__ == '__main__':
                 args.class_agnostic,
             }, save_name)
         print('save model: {}'.format(save_name))
-
-    if args.use_tfboard:
-        logger.close()
+################################################saving the final model #############################################################
+    save_name = os.path.join(
+        output_dir, 'faster_rcnn_{}_{}_{}.pth'.format(args.session, epoch,
+                                                      iter_num))
+    save_checkpoint(
+        {
+            'session':
+            args.session,
+            'epoch':
+            epoch + 1,
+            'model':
+            fasterRCNN.module.state_dict()
+            if args.mGPUs else fasterRCNN.state_dict(),
+            'optimizer':
+            optimizer.state_dict(),
+            'pooling_mode':
+            cfg.POOLING_MODE,
+            'class_agnostic':
+            args.class_agnostic,
+        }, save_name)
+    print('save model: {}'.format(save_name))

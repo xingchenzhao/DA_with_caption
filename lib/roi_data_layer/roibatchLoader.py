@@ -74,8 +74,8 @@ class roibatchLoader(data.Dataset):
         data = torch.from_numpy(blobs['data'])
         im_info = torch.from_numpy(blobs['im_info'])
         if 'caption' in self._roidb[0]:
-            caption = torch.Tensor(blobs['caption'])
-            caplen = torch.Tensor([blobs['caplen']])
+            caption = torch.LongTensor(blobs['caption'])
+            caplen = torch.LongTensor([blobs['caplen']])
         # we need to random shuffle the bounding box.
         data_height, data_width = data.size(1), data.size(2)
         if self.training:

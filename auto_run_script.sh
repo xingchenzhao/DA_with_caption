@@ -1,1 +1,1 @@
-sleep 10h && kinit -R && aklog
+sleep 12h && kinit -R && aklog

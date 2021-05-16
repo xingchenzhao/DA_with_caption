@@ -9,6 +9,7 @@ data/*
 # refactoring this file!
 
 ## PyTorch
+glove.6B/
 data/
 images/
 images__/

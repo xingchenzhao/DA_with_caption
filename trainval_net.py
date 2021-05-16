@@ -33,6 +33,7 @@ from model.utils.net_utils import weights_normal_init, save_net, load_net, \
 from model.faster_rcnn.vgg16 import vgg16
 from model.faster_rcnn.resnet import resnet
 
+
 def parse_args():
     """
   Parse input arguments
@@ -258,7 +259,7 @@ if __name__ == '__main__':
     # -- Note: Use validation set and disable the flipped to enable faster loading.
     cfg.TRAIN.USE_FLIPPED = True
     cfg.USE_GPU_NMS = args.cuda
-    imdb, roidb, ratio_list, ratio_index = combined_roidb(args.imdb_name)
+    imdb, roidb, ratio_list, ratio_index, _ = combined_roidb(args.imdb_name)
     train_size = len(roidb)
 
     print('{:d} roidb entries'.format(len(roidb)))
