@@ -20,7 +20,49 @@ import torchvision.transforms as transforms
 from torch.utils.data.sampler import Sampler
 from model.utils.net_utils import adjust_learning_rate
 from torch.nn.utils.rnn import pack_padded_sequence
+from model.utils.net_utils import save_checkpoint
+from model.utils.config import cfg
 
+
+def save_model(args, iter_num, epoch, faster_rcnn, faster_rcnn_optimizer, lstm,
+               lstm_optimizer):
+    save_name = os.path.join(
+        args.output_dir,
+        'cap_faster_rcnn_{}_{}_{}.pth'.format(args.session, epoch, iter_num))
+    save_checkpoint(
+        {
+            'session':
+            args.session,
+            'epoch':
+            epoch + 1,
+            'iter_num':
+            0,
+            'model':
+            faster_rcnn.module.state_dict()
+            if args.mGPUs else faster_rcnn.state_dict(),
+            'optimizer':
+            faster_rcnn_optimizer.state_dict(),
+            'pooling_mode':
+            cfg.POOLING_MODE,
+            'class_agnostic':
+            args.class_agnostic,
+        }, save_name)
+    print('save model: {}'.format(save_name))
+    save_name = os.path.join(
+        args.output_dir,
+        'cap_lstm_{}_{}_{}.pth'.format(args.session, epoch, iter_num))
+    save_checkpoint(
+        {
+            'session': args.session,
+            'epoch': epoch + 1,
+            'iter_num': iter_num + 1,
+            'model':
+            lstm.module.state_dict() if args.mGPUs else lstm.state_dict(),
+            'optimizer': lstm_optimizer.state_dict(),
+            'pooling_mode': cfg.POOLING_MODE,
+            'class_agnostic': args.class_agnostic,
+        }, save_name)
+    print('save model: {}'.format(save_name))
 
 
 class AverageMeter(object):
@@ -56,7 +98,7 @@ def fine_tune(model, freeze=False):
                 p.requires_grad = True
 
 
-def clip_gradient(optimizer, grad_clip):
+def clip_gradient(optimizer, grad_clip=5):
     """
     Clips gradients computed during backpropagation to avoid explosion of gradients.
     :param optimizer: optimizer with the gradients to be clipped

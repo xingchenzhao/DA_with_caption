@@ -1,0 +1,59 @@
+2021-05-28 05:03:01,325 INFO    MainThread:7324 [wandb_setup.py:_flush():69] setting env: {}
+2021-05-28 05:03:01,325 INFO    MainThread:7324 [wandb_setup.py:_flush():69] setting login settings: {}
+2021-05-28 05:03:01,326 INFO    MainThread:7324 [wandb_init.py:_log_setup():319] Logging user logs to /own_files/lanyi/objDet/wandb/run-20210528_050301-1zhzbbha/logs/debug.log
+2021-05-28 05:03:01,326 INFO    MainThread:7324 [wandb_init.py:_log_setup():320] Logging internal logs to /own_files/lanyi/objDet/wandb/run-20210528_050301-1zhzbbha/logs/debug-internal.log
+2021-05-28 05:03:01,326 INFO    MainThread:7324 [wandb_init.py:init():352] calling init triggers
+2021-05-28 05:03:01,326 INFO    MainThread:7324 [wandb_init.py:init():357] wandb.init called with sweep_config: {}
+config: {}
+2021-05-28 05:03:01,326 INFO    MainThread:7324 [wandb_init.py:init():401] starting backend
+2021-05-28 05:03:01,326 INFO    MainThread:7324 [backend.py:_multiprocessing_setup():69] multiprocessing start_methods=fork,spawn,forkserver, using: spawn
+2021-05-28 05:03:01,347 INFO    MainThread:7324 [backend.py:ensure_launched():123] starting backend process...
+2021-05-28 05:03:01,362 INFO    MainThread:7324 [backend.py:ensure_launched():127] started backend process with pid: 7343
+2021-05-28 05:03:01,364 INFO    MainThread:7324 [wandb_init.py:init():406] backend started and connected
+2021-05-28 05:03:01,366 INFO    MainThread:7324 [wandb_init.py:init():446] updated telemetry
+2021-05-28 05:03:01,366 INFO    MainThread:7324 [wandb_init.py:init():465] communicating current version
+2021-05-28 05:03:02,212 INFO    MainThread:7324 [wandb_init.py:init():470] got version response upgrade_message: "wandb version 0.10.31 is available!  To upgrade, please run:\n $ pip install wandb --upgrade"
+
+2021-05-28 05:03:02,212 INFO    MainThread:7324 [wandb_init.py:init():478] communicating run to backend with 30 second timeout
+2021-05-28 05:03:03,311 INFO    MainThread:7324 [wandb_init.py:init():503] starting run threads in backend
+2021-05-28 05:03:03,566 INFO    MainThread:7324 [wandb_run.py:_console_start():1422] atexit reg
+2021-05-28 05:03:03,566 INFO    MainThread:7324 [wandb_run.py:_redirect():1285] redirect: SettingsConsole.REDIRECT
+2021-05-28 05:03:03,567 INFO    MainThread:7324 [wandb_run.py:_redirect():1290] Redirecting console.
+2021-05-28 05:03:03,568 INFO    MainThread:7324 [redirect.py:install():213] install start
+2021-05-28 05:03:03,568 INFO    MainThread:7324 [redirect.py:install():228] install stop
+2021-05-28 05:03:03,568 INFO    MainThread:7324 [redirect.py:install():213] install start
+2021-05-28 05:03:03,569 INFO    MainThread:7324 [redirect.py:install():228] install stop
+2021-05-28 05:03:03,569 INFO    MainThread:7324 [wandb_run.py:_redirect():1336] Redirects installed.
+2021-05-28 05:03:03,569 INFO    MainThread:7324 [wandb_init.py:init():527] run started, returning control to user process
+2021-05-28 05:14:12,822 INFO    MainThread:7324 [wandb_run.py:_atexit_cleanup():1392] got exitcode: 255
+2021-05-28 05:14:12,822 INFO    MainThread:7324 [wandb_run.py:_restore():1364] restore
+2021-05-28 05:14:12,823 INFO    MainThread:7324 [redirect.py:uninstall():232] uninstall start
+2021-05-28 05:14:12,823 INFO    MainThread:7324 [redirect.py:_stop():287] _stop: stdout
+2021-05-28 05:14:12,824 ERROR   stderr    :7324 [redirect.py:_pipe_relay():139] problem in pipe relay
+Traceback (most recent call last):
+  File "/afs/cs.pitt.edu/usr0/law190/anaconda3/lib/python3.8/site-packages/wandb/sdk/lib/redirect.py", line 137, in _pipe_relay
+    cb(name, data)
+  File "/afs/cs.pitt.edu/usr0/law190/anaconda3/lib/python3.8/site-packages/wandb/sdk/wandb_run.py", line 739, in _console_callback
+    self._backend.interface.publish_output(name, data)
+  File "/afs/cs.pitt.edu/usr0/law190/anaconda3/lib/python3.8/site-packages/wandb/sdk/interface/interface.py", line 186, in publish_output
+    self._publish_output(o)
+  File "/afs/cs.pitt.edu/usr0/law190/anaconda3/lib/python3.8/site-packages/wandb/sdk/interface/interface.py", line 191, in _publish_output
+    self._publish(rec)
+  File "/afs/cs.pitt.edu/usr0/law190/anaconda3/lib/python3.8/site-packages/wandb/sdk/interface/interface.py", line 514, in _publish
+    raise Exception("The wandb backend process has shutdown")
+Exception: The wandb backend process has shutdown
+2021-05-28 05:14:12,824 INFO    MainThread:7324 [redirect.py:_stop():293] _stop closed: stdout
+2021-05-28 05:14:12,824 INFO    stdout    :7324 [redirect.py:_pipe_relay():129] relay done saw last write: stdout
+2021-05-28 05:14:12,827 INFO    stdout    :7324 [redirect.py:_pipe_relay():145] relay done done: stdout
+2021-05-28 05:14:12,827 INFO    MainThread:7324 [redirect.py:_stop():299] _stop joined: stdout
+2021-05-28 05:14:12,827 INFO    MainThread:7324 [redirect.py:_stop():301] _stop rd closed: stdout
+2021-05-28 05:14:12,827 INFO    MainThread:7324 [redirect.py:uninstall():236] uninstall done
+2021-05-28 05:14:12,827 INFO    MainThread:7324 [redirect.py:uninstall():232] uninstall start
+2021-05-28 05:14:12,827 INFO    MainThread:7324 [redirect.py:_stop():287] _stop: stderr
+2021-05-28 05:14:12,827 INFO    MainThread:7324 [redirect.py:_stop():293] _stop closed: stderr
+2021-05-28 05:14:12,827 INFO    stderr    :7324 [redirect.py:_pipe_relay():129] relay done saw last write: stderr
+2021-05-28 05:14:12,827 INFO    stderr    :7324 [redirect.py:_pipe_relay():145] relay done done: stderr
+2021-05-28 05:14:12,827 INFO    MainThread:7324 [redirect.py:_stop():299] _stop joined: stderr
+2021-05-28 05:14:12,827 INFO    MainThread:7324 [redirect.py:_stop():301] _stop rd closed: stderr
+2021-05-28 05:14:12,827 INFO    MainThread:7324 [redirect.py:uninstall():236] uninstall done
+2021-05-28 05:14:12,828 INFO    MainThread:7324 [wandb_run.py:_restore():1364] restore

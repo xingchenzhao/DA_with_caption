@@ -1,0 +1,1923 @@
+diff --git a/LICENSE b/LICENSE
+deleted file mode 100644
+index f7b672e..0000000
+--- a/LICENSE
++++ /dev/null
+@@ -1,21 +0,0 @@
+-MIT License
+-
+-Copyright (c) 2017 Jianwei Yang
+-
+-Permission is hereby granted, free of charge, to any person obtaining a copy
+-of this software and associated documentation files (the "Software"), to deal
+-in the Software without restriction, including without limitation the rights
+-to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+-copies of the Software, and to permit persons to whom the Software is
+-furnished to do so, subject to the following conditions:
+-
+-The above copyright notice and this permission notice shall be included in all
+-copies or substantial portions of the Software.
+-
+-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+-IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+-FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+-AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+-LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+-OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+-SOFTWARE.
+diff --git a/lib/datasets/coco.py b/lib/datasets/coco.py
+deleted file mode 100644
+index ee23c97..0000000
+--- a/lib/datasets/coco.py
++++ /dev/null
+@@ -1,399 +0,0 @@
+-# --------------------------------------------------------
+-# Fast/er R-CNN
+-# Licensed under The MIT License [see LICENSE for details]
+-# Written by Ross Girshick and Xinlei Chen
+-# --------------------------------------------------------
+-from __future__ import absolute_import
+-from __future__ import division
+-from __future__ import print_function
+-
+-from datasets.imdb import imdb
+-import datasets.ds_utils as ds_utils
+-from model.utils.config import cfg
+-import os.path as osp
+-import sys
+-import os
+-import numpy as np
+-import scipy.sparse
+-import scipy.io as sio
+-import pickle
+-import json
+-import uuid
+-# COCO API
+-from pycocotools.coco import COCO
+-from pycocotools.cocoeval import COCOeval
+-from pycocotools import mask as COCOmask
+-import nltk
+-
+-
+-class coco(imdb):
+-    def __init__(self, image_set, year):
+-        imdb.__init__(self, 'coco_' + year + '_' + image_set)
+-        # COCO specific config options
+-        self.config = {'use_salt': True, 'cleanup': True}
+-        # name, paths
+-        self._year = year
+-        self._image_set = image_set
+-        self._data_path = osp.join(cfg.DATA_DIR, 'coco')
+-        # load COCO API, classes, class <-> id mappings
+-        self._COCO = COCO(self._get_ann_file())
+-
+-        self._caption = COCO(self._get_cap_file())
+-        self._vocab = self._get_vocab_file()
+-        self._caption_ids = list(self._caption.anns.keys())
+-        self._img_ids = self._caption.getImgIds()
+-        cats = self._COCO.loadCats(self._COCO.getCatIds())
+-        self._classes = tuple(['__background__'] + [c['name'] for c in cats])
+-        self._class_to_ind = dict(
+-            list(zip(self.classes, list(range(self.num_classes)))))
+-        self._class_to_coco_cat_id = dict(
+-            list(zip([c['name'] for c in cats], self._COCO.getCatIds())))
+-        self._image_index = self._load_image_set_index()
+-        # Default to roidb handler
+-        self.set_proposal_method('gt')
+-        self.competition_mode(False)
+-
+-        # Some image sets are "views" (i.e. subsets) into others.
+-        # For example, minival2014 is a random 5000 image subset of val2014.
+-        # This mapping tells us where the view's images and proposals come from.
+-        self._view_map = {
+-            'minival2014': 'val2014',  # 5k val2014 subset
+-            'valminusminival2014': 'val2014',  # val2014 \setminus minival2014
+-            'test-dev2015': 'test2015',
+-            'valminuscapval2014': 'val2014',
+-            'capval2014': 'val2014',
+-            'captest2014': 'val2014'
+-        }
+-        coco_name = image_set + year  # e.g., "val2014"
+-        self._data_name = (self._view_map[coco_name]
+-                           if coco_name in self._view_map else coco_name)
+-        # Dataset splits that have ground-truth annotations (test splits
+-        # do not have gt annotations)
+-        self._gt_splits = ('train', 'val', 'minival')
+-
+-    def _get_ann_file(self):
+-        prefix = 'instances' if self._image_set.find('test') == -1 \
+-          else 'image_info'
+-        return osp.join(self._data_path, 'annotations',
+-                        prefix + '_' + self._image_set + self._year + '.json')
+-
+-    def _get_cap_file(self):
+-        prefix = 'captions' if self._image_set.find('test') == -1 \
+-          else 'image_info'
+-        return osp.join(self._data_path, 'annotations',
+-                        prefix + '_' + self._image_set + self._year + '.json')
+-
+-    def _get_vocab_file(self):
+-        vocab_dir = osp.join(self._data_path, 'annotations',
+-                             'vocab' + '_' + 'train' + self._year + '.pkl')
+-        with open(vocab_dir, 'rb') as f:
+-            vocab = pickle.load(f)
+-        return vocab
+-
+-    def _load_image_set_index(self):
+-        """
+-    Load image ids.
+-    """
+-        image_ids = self._COCO.getImgIds()
+-        return image_ids
+-
+-    def _get_widths(self):
+-        anns = self._COCO.loadImgs(self._image_index)
+-        widths = [ann['width'] for ann in anns]
+-        return widths
+-
+-    def image_path_at(self, i):
+-        """
+-    Return the absolute path to image i in the image sequence.
+-    """
+-        return self.image_path_from_index(self._image_index[i])
+-
+-    def image_id_at(self, i):
+-        """
+-    Return the absolute path to image i in the image sequence.
+-    """
+-        return self._image_index[i]
+-
+-    def caption_at(self, i):
+-        return self._caption.anns[self._image_index[i]]['caption']
+-
+-    def image_path_from_index(self, index):
+-        """
+-    Construct an image path from the image's "index" identifier.
+-    """
+-        # Example image path for index=119993:
+-        #   images/train2014/COCO_train2014_000000119993.jpg
+-        file_name = ('COCO_' + self._data_name + '_' + str(index).zfill(12) +
+-                     '.jpg')
+-        image_path = osp.join(self._data_path, 'images', self._data_name,
+-                              file_name)
+-        assert osp.exists(image_path), \
+-          'Path does not exist: {}'.format(image_path)
+-        return image_path
+-
+-    def gt_roidb(self):
+-        """
+-    Return the database of ground-truth regions of interest.
+-    This function loads/saves from/to a cache file to speed up future calls.
+-    """
+-        cache_file = osp.join(self.cache_path, self.name + '_gt_roidb.pkl')
+-        if osp.exists(cache_file):
+-            with open(cache_file, 'rb') as fid:
+-                roidb = pickle.load(fid)
+-            print('{} gt roidb loaded from {}'.format(self.name, cache_file))
+-            return roidb
+-
+-        gt_roidb = [
+-            self._load_coco_annotation(index) for index in self._image_index
+-        ]
+-
+-        with open(cache_file, 'wb') as fid:
+-            pickle.dump(gt_roidb, fid, pickle.HIGHEST_PROTOCOL)
+-        print('wrote gt roidb to {}'.format(cache_file))
+-        return gt_roidb
+-
+-    # def _load_caption(self, index):  #TODO: 暂时只用一个caption
+-    #     max_len = 80
+-    #     annId = self._caption.getAnnIds(imgIds=index, iscrowd=None)
+-    #     captions = self._caption.loadAnns(annId)
+-    #     caption = ''
+-    #     for cap in captions:
+-    #         caption += cap['caption']
+-    #         break
+-    #     tokens = nltk.tokenize.word_tokenize(str(caption).lower())
+-    #     caption = []
+-    #     caption.append(self._vocab('<start>'))
+-    #     caption.extend([self._vocab(token) for token in tokens])
+-    #     caption.append(self._vocab('<end>'))
+-    #     caplen = len(caption) - 1
+-    #     for _ in range(max_len - caplen):
+-    #         caption.append(self._vocab('<pad>'))
+-    #     return caption, caplen
+-
+-    def _load_caption(self, index):
+-        max_len = 80
+-        annId = self._caption.getAnnIds(imgIds=index, iscrowd=None)
+-        captions = self._caption.loadAnns(annId)
+-        cap_list = list()
+-        caplen_list = list()
+-        for cap in captions:
+-            tokens = nltk.tokenize.word_tokenize(str(cap).lower())
+-            caption = []
+-            caption.append(self._vocab('<start>'))
+-            caption.extend([self._vocab(token) for token in tokens])
+-            caption.append(self._vocab('<end>'))
+-            caplen = len(caption) - 1
+-            for _ in range(max_len - caplen - 1):
+-                caption.append(self._vocab('<pad>'))
+-            cap_list.append(caption)
+-            caplen_list.append(caplen)
+-        caplen = torch.LongTensor(caplen_list)
+-        caption = torch.LongTensor(cap_list)
+-        return caption, caplen
+-
+-    def _load_coco_annotation(self, index):
+-        """
+-    Loads COCO bounding-box instance annotations. Crowd instances are
+-    handled by marking their overlaps (with all categories) to -1. This
+-    overlap value means that crowd "instances" are excluded from training.
+-    """
+-        im_ann = self._COCO.loadImgs(index)[0]
+-        width = im_ann['width']
+-        height = im_ann['height']
+-
+-        annIds = self._COCO.getAnnIds(imgIds=index, iscrowd=None)
+-        objs = self._COCO.loadAnns(annIds)
+-        # Sanitize bboxes -- some are invalid
+-
+-        caption, caplen = self._load_caption(index)
+-        valid_objs = []
+-        for obj in objs:
+-            x1 = np.max((0, obj['bbox'][0]))
+-            y1 = np.max((0, obj['bbox'][1]))
+-            x2 = np.min((width - 1, x1 + np.max((0, obj['bbox'][2] - 1))))
+-            y2 = np.min((height - 1, y1 + np.max((0, obj['bbox'][3] - 1))))
+-            if obj['area'] > 0 and x2 >= x1 and y2 >= y1:
+-                obj['clean_bbox'] = [x1, y1, x2, y2]
+-                valid_objs.append(obj)
+-        objs = valid_objs
+-        num_objs = len(objs)
+-
+-        boxes = np.zeros((num_objs, 4), dtype=np.uint16)
+-        gt_classes = np.zeros((num_objs), dtype=np.int32)
+-        overlaps = np.zeros((num_objs, self.num_classes), dtype=np.float32)
+-        seg_areas = np.zeros((num_objs), dtype=np.float32)
+-
+-        # Lookup table to map from COCO category ids to our internal class
+-        # indices
+-        coco_cat_id_to_class_ind = dict([(self._class_to_coco_cat_id[cls],
+-                                          self._class_to_ind[cls])
+-                                         for cls in self._classes[1:]])
+-
+-        for ix, obj in enumerate(objs):
+-            cls = coco_cat_id_to_class_ind[obj['category_id']]
+-            boxes[ix, :] = obj['clean_bbox']
+-            gt_classes[ix] = cls
+-            seg_areas[ix] = obj['area']
+-            if obj['iscrowd']:
+-                # Set overlap to -1 for all classes for crowd objects
+-                # so they will be excluded during training
+-                overlaps[ix, :] = -1.0
+-            else:
+-                overlaps[ix, cls] = 1.0
+-
+-        ds_utils.validate_boxes(boxes, width=width, height=height)
+-        overlaps = scipy.sparse.csr_matrix(overlaps)
+-        return {
+-            'width': width,
+-            'height': height,
+-            'boxes': boxes,
+-            'gt_classes': gt_classes,
+-            'gt_overlaps': overlaps,
+-            'flipped': False,
+-            'seg_areas': seg_areas,
+-            'caption': caption,
+-            'caplen': caplen
+-        }
+-
+-    def _get_widths(self):
+-        return [r['width'] for r in self.roidb]
+-
+-    def append_flipped_images(self):
+-        num_images = self.num_images
+-        widths = self._get_widths()
+-        for i in range(num_images):
+-            boxes = self.roidb[i]['boxes'].copy()
+-            oldx1 = boxes[:, 0].copy()
+-            oldx2 = boxes[:, 2].copy()
+-            boxes[:, 0] = widths[i] - oldx2 - 1
+-            boxes[:, 2] = widths[i] - oldx1 - 1
+-            assert (boxes[:, 2] >= boxes[:, 0]).all()
+-            entry = {
+-                'width': widths[i],
+-                'height': self.roidb[i]['height'],
+-                'boxes': boxes,
+-                'gt_classes': self.roidb[i]['gt_classes'],
+-                'gt_overlaps': self.roidb[i]['gt_overlaps'],
+-                'flipped': True,
+-                'seg_areas': self.roidb[i]['seg_areas'],
+-                'caption': self.roidb[i]['caption'],
+-                'caplen': self.roidb[i]['caplen']
+-            }
+-
+-            self.roidb.append(entry)
+-        self._image_index = self._image_index * 2
+-
+-    def _get_box_file(self, index):
+-        # first 14 chars / first 22 chars / all chars + .mat
+-        # COCO_val2014_0/COCO_val2014_000000447/COCO_val2014_000000447991.mat
+-        file_name = ('COCO_' + self._data_name + '_' + str(index).zfill(12) +
+-                     '.mat')
+-        return osp.join(file_name[:14], file_name[:22], file_name)
+-
+-    def _print_detection_eval_metrics(self, coco_eval):
+-        IoU_lo_thresh = 0.5
+-        IoU_hi_thresh = 0.95
+-
+-        def _get_thr_ind(coco_eval, thr):
+-            ind = np.where((coco_eval.params.iouThrs > thr - 1e-5)
+-                           & (coco_eval.params.iouThrs < thr + 1e-5))[0][0]
+-            iou_thr = coco_eval.params.iouThrs[ind]
+-            assert np.isclose(iou_thr, thr)
+-            return ind
+-
+-        ind_lo = _get_thr_ind(coco_eval, IoU_lo_thresh)
+-        ind_hi = _get_thr_ind(coco_eval, IoU_hi_thresh)
+-        # precision has dims (iou, recall, cls, area range, max dets)
+-        # area range index 0: all area ranges
+-        # max dets index 2: 100 per image
+-        precision = \
+-          coco_eval.eval['precision'][ind_lo:(ind_hi + 1), :, :, 0, 2]
+-        ap_default = np.mean(precision[precision > -1])
+-        print(('~~~~ Mean and per-category AP @ IoU=[{:.2f},{:.2f}] '
+-               '~~~~').format(IoU_lo_thresh, IoU_hi_thresh))
+-        print('{:.1f}'.format(100 * ap_default))
+-        for cls_ind, cls in enumerate(self.classes):
+-            if cls == '__background__':
+-                continue
+-            # minus 1 because of __background__
+-            precision = coco_eval.eval['precision'][ind_lo:(ind_hi + 1), :,
+-                                                    cls_ind - 1, 0, 2]
+-            ap = np.mean(precision[precision > -1])
+-            print('{:.1f}'.format(100 * ap))
+-
+-        print('~~~~ Summary metrics ~~~~')
+-        coco_eval.summarize()
+-
+-    def _do_detection_eval(self, res_file, output_dir):
+-        ann_type = 'bbox'
+-        coco_dt = self._COCO.loadRes(res_file)
+-        coco_eval = COCOeval(self._COCO, coco_dt)
+-        coco_eval.params.useSegm = (ann_type == 'segm')
+-        coco_eval.evaluate()
+-        coco_eval.accumulate()
+-        self._print_detection_eval_metrics(coco_eval)
+-        eval_file = osp.join(output_dir, 'detection_results.pkl')
+-        with open(eval_file, 'wb') as fid:
+-            pickle.dump(coco_eval, fid, pickle.HIGHEST_PROTOCOL)
+-        print('Wrote COCO eval results to: {}'.format(eval_file))
+-
+-    def _coco_results_one_category(self, boxes, cat_id):
+-        results = []
+-        for im_ind, index in enumerate(self.image_index):
+-            dets = boxes[im_ind].astype(np.float)
+-            if dets == []:
+-                continue
+-            scores = dets[:, -1]
+-            xs = dets[:, 0]
+-            ys = dets[:, 1]
+-            ws = dets[:, 2] - xs + 1
+-            hs = dets[:, 3] - ys + 1
+-            results.extend([{
+-                'image_id': index,
+-                'category_id': cat_id,
+-                'bbox': [xs[k], ys[k], ws[k], hs[k]],
+-                'score': scores[k]
+-            } for k in range(dets.shape[0])])
+-        return results
+-
+-    def _write_coco_results_file(self, all_boxes, res_file):
+-        # [{"image_id": 42,
+-        #   "category_id": 18,
+-        #   "bbox": [258.15,41.29,348.26,243.78],
+-        #   "score": 0.236}, ...]
+-        results = []
+-        for cls_ind, cls in enumerate(self.classes):
+-            if cls == '__background__':
+-                continue
+-            print('Collecting {} results ({:d}/{:d})'.format(
+-                cls, cls_ind, self.num_classes - 1))
+-            coco_cat_id = self._class_to_coco_cat_id[cls]
+-            results.extend(
+-                self._coco_results_one_category(all_boxes[cls_ind],
+-                                                coco_cat_id))
+-        print('Writing results json to {}'.format(res_file))
+-        with open(res_file, 'w') as fid:
+-            json.dump(results, fid)
+-
+-    def evaluate_detections(self, all_boxes, output_dir):
+-        res_file = osp.join(
+-            output_dir,
+-            ('detections_' + self._image_set + self._year + '_results'))
+-        if self.config['use_salt']:
+-            res_file += '_{}'.format(str(uuid.uuid4()))
+-        res_file += '.json'
+-        self._write_coco_results_file(all_boxes, res_file)
+-        # Only do evaluation on non-test sets
+-        if self._image_set.find('test') == -1:
+-            self._do_detection_eval(res_file, output_dir)
+-        # Optionally cleanup results json file
+-        if self.config['cleanup']:
+-            os.remove(res_file)
+-
+-    def competition_mode(self, on):
+-        if on:
+-            self.config['use_salt'] = False
+-            self.config['cleanup'] = False
+-        else:
+-            self.config['use_salt'] = True
+-            self.config['cleanup'] = True
+diff --git a/lib/datasets/factory.py b/lib/datasets/factory.py
+index c0ee232..eb8db8c 100644
+--- a/lib/datasets/factory.py
++++ b/lib/datasets/factory.py
+@@ -11,7 +11,8 @@ from __future__ import print_function
+ 
+ __sets = {}
+ from datasets.pascal_voc import pascal_voc
+-from datasets.coco import coco
++from datasets.coco_caption import coco
++from datasets.coco_original import coco as coco_original
+ from datasets.imagenet import imagenet
+ from datasets.vg import vg
+ from datasets.cityscape_multi import cityscape_multi
+@@ -34,6 +35,11 @@ for year in ['2014']:
+         name = 'coco_{}_{}'.format(year, split)
+         __sets[name] = (lambda split=split, year=year: coco(split, year))
+ 
++for year in ['2014']:
++    for split in ['minival', 'valminusminival', 'trainval']:
++        name = 'coco_{}_{}'.format(year, split)
++        __sets[name] = (
++            lambda split=split, year=year: coco_original(split, year))
+ # Set up coco_2014_cap_<split>
+ for year in ['2014']:
+     for split in ['train', 'val', 'capval', 'valminuscapval', 'trainval']:
+diff --git a/lib/model/caption_modules/caption_main.py b/lib/model/caption_modules/caption_main.py
+index 7f1be11..967b003 100644
+--- a/lib/model/caption_modules/caption_main.py
++++ b/lib/model/caption_modules/caption_main.py
+@@ -9,33 +9,30 @@ import torch.optim as optim
+ import os
+ 
+ 
+-def caption_main(args, dataloader, val_dataloader, lstm_criterion, faster_rcnn,
+-                 faster_rcnn_optimizer, lstm, lstm_optimizer):
+-    iter_num = 0
+-    if args.cap_resume:
+-        load_name = os.path.join(
+-            args.output_dir,
+-            'cap_lstm_{}_{}_{}.pth'.format(args.checksession, args.checkepoch,
+-                                           args.checkpoint))
+-        print("loading checkpoint %s" % (load_name))
+-        checkpoint = torch.load(load_name)
+-        args.session = checkpoint['session']
+-        args.start_epoch = checkpoint['epoch']
+-        iter_num = checkpoint['iter_num']
+-        lstm.load_state_dict(checkpoint['model'])
+-        lstm_optimizer.load_state_dict(checkpoint['optimizer'])
+-        lr = lstm_optimizer.param_groups[0]['lr']
++def caption_main(args,
++                 dataloader,
++                 val_dataloader,
++                 lstm_criterion,
++                 faster_rcnn,
++                 faster_rcnn_optimizer,
++                 lstm,
++                 lstm_optimizer,
++                 iter_num=0):
++    iter_num = iter_num
+ 
+-        print("loaded checkpoint %s" % (load_name))
+     if args.mGPUs:
+-        lstm_decoder = nn.DataParallel(lstm_decoder)
++        lstm_dp = nn.DataParallel(lstm)
++
+     train_caption(args,
+                   dataloader,
+                   lstm_criterion,
+                   faster_rcnn,
+                   faster_rcnn_optimizer,
+-                  lstm,
++                  lstm if not args.mGPUs else lstm_dp,
+                   lstm_optimizer,
+                   iter_num=iter_num)
++    if args.mGPUs:
++        del lstm_dp
++        torch.cuda.empty_cache()
+     bleu4 = validate_caption(args, val_dataloader, lstm_criterion, faster_rcnn,
+                              lstm)
+diff --git a/lib/model/caption_modules/model.py b/lib/model/caption_modules/model.py
+index 205a790..fd7a352 100644
+--- a/lib/model/caption_modules/model.py
++++ b/lib/model/caption_modules/model.py
+@@ -1,6 +1,9 @@
+ import torch
+ from torch import nn
+ import torchvision
++import numpy as np
++import torch.nn.functional as F
++from torch.nn.utils.rnn import pack_padded_sequence
+ 
+ 
+ class Attention(nn.Module):
+@@ -73,6 +76,7 @@ class DecoderWithAttention(nn.Module):
+         self.decoder_dim = decoder_dim
+         self.vocab_size = vocab_size
+         self.dropout = dropout
++        self.sample_temp = 0.5
+ 
+         self.attention = Attention(encoder_dim, decoder_dim,
+                                    attention_dim)  # attention network
+@@ -133,7 +137,12 @@ class DecoderWithAttention(nn.Module):
+         c = self.init_c(mean_encoder_out)
+         return h, c
+ 
+-    def forward(self, encoder_out, encoded_captions, caption_lengths):
++    def forward(self,
++                encoder_out,
++                encoded_captions,
++                caption_lengths,
++                scheduled_sampling=False,
++                decay_schedule=0.5):
+         """
+         Forward propagation.
+         :param encoder_out: encoded images, a tensor of dimension (batch_size, enc_image_size, enc_image_size, encoder_dim)
+@@ -153,10 +162,11 @@ class DecoderWithAttention(nn.Module):
+         num_pixels = encoder_out.size(1)
+ 
+         # Sort input data by decreasing lengths; why? apparent below
+-        caption_lengths, sort_ind = caption_lengths.squeeze(1).sort(
++        caption_lengths, sort_ind = caption_lengths.squeeze(0).sort(
+             dim=0, descending=True)
+-        encoder_out = encoder_out[sort_ind]
+-        encoded_captions = encoded_captions[sort_ind]
++        if batch_size != 1:
++            encoder_out = encoder_out[sort_ind]
++            encoded_captions = encoded_captions[sort_ind]
+ 
+         # Embedding
+         embeddings = self.embedding(
+@@ -167,9 +177,11 @@ class DecoderWithAttention(nn.Module):
+ 
+         # We won't decode at the <end> position, since we've finished generating as soon as we generate <end>
+         # So, decoding lengths are actual lengths - 1
+-        decode_lengths = (caption_lengths - 1).tolist()
++        decode_lengths = (caption_lengths).tolist()
++        if batch_size == 1:
++            decode_lengths = [decode_lengths]
+         # decode_lengths = self.args.decode_lengths
+-
++        seq_len = encoded_captions.size(1)
+         # Create tensors to hold word predicion scores and alphas
+         predictions = torch.zeros(batch_size, max(decode_lengths),
+                                   vocab_size).cuda()
+@@ -179,23 +191,175 @@ class DecoderWithAttention(nn.Module):
+         # At each time-step, decode by
+         # attention-weighing the encoder's output based on the decoder's previous hidden state output
+         # then generate a new word in the decoder with the previous word and the attention weighted encoding
++
++        if scheduled_sampling:
++            use_sampling = np.random.random() < decay_schedule
++        else:
++            use_sampling = False
++
++        input_word = torch.ones(batch_size, 1,
++                                dtype=torch.long).cuda()  #ones means start
+         for t in range(max(decode_lengths)):
+             batch_size_t = sum([l > t for l in decode_lengths])
++            if use_sampling:
++                word_embed = self.embedding(input_word).squeeze(1)
++                word_embed = word_embed[:batch_size_t, :]
++            else:
++                word_embed = embeddings[:batch_size_t, t, :]
+             attention_weighted_encoding, alpha = self.attention(
+                 encoder_out[:batch_size_t], h[:batch_size_t])
+             gate = self.sigmoid(self.f_beta(h[:batch_size_t])
+                                 )  # gating scalar, (batch_size_t, encoder_dim)
+             attention_weighted_encoding = gate * attention_weighted_encoding
+             h, c = self.decode_step(
+-                torch.cat([
+-                    embeddings[:batch_size_t, t, :],
+-                    attention_weighted_encoding
+-                ],
+-                          dim=1),
++                torch.cat([word_embed, attention_weighted_encoding], dim=1),
+                 (h[:batch_size_t],
+                  c[:batch_size_t]))  # (batch_size_t, decoder_dim)
+             preds = self.fc(self.dropout(h))  # (batch_size_t, vocab_size)
+             predictions[:batch_size_t, t, :] = preds
+             alphas[:batch_size_t, t, :] = alpha
++            if use_sampling:
++                scaled_output = preds / self.sample_temp
++                scoring = F.log_softmax(scaled_output, dim=1)
++                input_word = scoring.topk(1)[1]
+ 
+         return predictions, encoded_captions, decode_lengths, alphas, sort_ind
++
++    def forward(self,
++                encoder_out,
++                encoded_captions,
++                caption_lengths,
++                use_sampling=False,
++                data_parallel=False,
++                lstm_criterion=None,
++                args=None):
++        """
++        Forward propagation.
++        :param encoder_out: encoded images, a tensor of dimension (batch_size, enc_image_size, enc_image_size, encoder_dim)
++        :param encoded_captions: encoded captions, a tensor of dimension (batch_size, max_caption_length)
++        :param caption_lengths: caption lengths, a tensor of dimension (batch_size, 1)
++        :return: scores for vocabulary, sorted encoded captions, decode lengths, weights, sort indices
++        """
++
++        batch_size = encoder_out.size(0)
++        encoder_dim = encoder_out.size(1)
++        vocab_size = self.vocab_size
++
++        # Flatten image
++        encoder_out = encoder_out.view(
++            batch_size, -1,
++            encoder_dim)  # (batch_size, num_pixels, encoder_dim)
++        num_pixels = encoder_out.size(1)
++
++        # Sort input data by decreasing lengths; why? apparent below
++        caption_lengths, sort_ind = caption_lengths.squeeze(0).sort(
++            dim=0, descending=True)
++        if batch_size != 1:
++            encoder_out = encoder_out[sort_ind]
++            encoded_captions = encoded_captions[sort_ind]
++
++        # Embedding
++        embeddings = self.embedding(
++            encoded_captions)  # (batch_size, max_caption_length, embed_dim)
++
++        # Initialize LSTM state
++        h, c = self.init_hidden_state(encoder_out)  # (batch_size, decoder_dim)
++
++        # We won't decode at the <end> position, since we've finished generating as soon as we generate <end>
++        # So, decoding lengths are actual lengths - 1
++        decode_lengths = (caption_lengths).tolist()
++        if batch_size == 1:
++            decode_lengths = [decode_lengths]
++        # decode_lengths = self.args.decode_lengths
++        seq_len = encoded_captions.size(1)
++        # Create tensors to hold word predicion scores and alphas
++        predictions = torch.zeros(batch_size, max(decode_lengths),
++                                  vocab_size).cuda()
++        alphas = torch.zeros(batch_size, max(decode_lengths),
++                             num_pixels).cuda()
++
++        # At each time-step, decode by
++        # attention-weighing the encoder's output based on the decoder's previous hidden state output
++        # then generate a new word in the decoder with the previous word and the attention weighted encoding
++
++        input_word = torch.ones(batch_size, 1,
++                                dtype=torch.long).cuda()  #ones means start
++        for t in range(max(decode_lengths)):
++            batch_size_t = sum([l > t for l in decode_lengths])
++            if use_sampling:
++                word_embed = self.embedding(input_word).squeeze(1)
++                word_embed = word_embed[:batch_size_t, :]
++            else:
++                word_embed = embeddings[:batch_size_t, t, :]
++            attention_weighted_encoding, alpha = self.attention(
++                encoder_out[:batch_size_t], h[:batch_size_t])
++            gate = self.sigmoid(self.f_beta(h[:batch_size_t])
++                                )  # gating scalar, (batch_size_t, encoder_dim)
++            attention_weighted_encoding = gate * attention_weighted_encoding
++            h, c = self.decode_step(
++                torch.cat([word_embed, attention_weighted_encoding], dim=1),
++                (h[:batch_size_t],
++                 c[:batch_size_t]))  # (batch_size_t, decoder_dim)
++            preds = self.fc(self.dropout(h))  # (batch_size_t, vocab_size)
++            predictions[:batch_size_t, t, :] = preds
++            alphas[:batch_size_t, t, :] = alpha
++            if use_sampling:
++                scaled_output = preds
++                scoring = F.log_softmax(scaled_output, dim=1)
++                input_word = scoring.topk(1)[1]
++        if not data_parallel:
++            return predictions, encoded_captions, decode_lengths, alphas, sort_ind
++        else:
++            targets = encoded_captions[:, 1:]
++            args.scores_copy = predictions.clone()
++            args.targets_copy = targets.clone()
++            args.decode_lengths = decode_lengths
++            scores, *_ = pack_padded_sequence(predictions,
++                                              decode_lengths,
++                                              batch_first=True)
++            targets, *_ = pack_padded_sequence(targets,
++                                               decode_lengths,
++                                               batch_first=True)
++
++            loss = lstm_criterion(scores, targets)
++            loss += args.alpha_c * ((1. - alphas.sum(dim=1))**2).mean()
++            return loss
++
++    def greedy_search(self, features, max_sentence=20):
++        batch_size = features.size(0)
++        encoder_dim = features.size(1)
++        features = features.view(
++            batch_size, -1,
++            encoder_dim)  # (batch_size, num_pixels, encoder_dim)
++        num_pixels = features.size(1)
++        predictions = torch.zeros(batch_size, max_sentence,
++                                  self.vocab_size).cuda()
++        alphas = torch.zeros(batch_size, max_sentence, num_pixels).cuda()
++        sentence = torch.zeros(batch_size, max_sentence).cuda()
++        input_word = torch.ones(batch_size, 1, dtype=torch.long).cuda()
++        h, c = self.init_hidden_state(features)
++        h_pred = torch.zeros(batch_size, max_sentence, self.decoder_dim).cuda()
++        c_pred = torch.zeros(batch_size, max_sentence, self.decoder_dim).cuda()
++        step = 0
++        while True:
++            word_embed = self.embedding(input_word).squeeze(1)
++            attention_weighted_encoding, alpha = self.attention(features, h)
++            gate = self.sigmoid(
++                self.f_beta(h))  # gating scalar, (batch_size_t, encoder_dim)
++            attention_weighted_encoding = gate * attention_weighted_encoding
++            h, c = self.decode_step(
++                torch.cat([word_embed, attention_weighted_encoding], dim=1),
++                (h, c))  # (batch_size_t, decoder_dim)
++            preds = self.fc(self.dropout(h))
++            scoring = F.log_softmax(preds, dim=1)
++            top_idx = scoring.topk(1)[1]
++            input_word = top_idx
++            sentence[:, step] = top_idx.squeeze(1)
++            predictions[:, step, :] = preds
++            alphas[:, step, :] = alpha
++            h_pred[:, step, :] = h
++            c_pred[:, step, :] = c
++            step += 1
++            if (step >= max_sentence):
++                break
++        return sentence, alphas, predictions, h_pred, c_pred
+diff --git a/lib/model/caption_modules/train_caption.py b/lib/model/caption_modules/train_caption.py
+index 76bb106..ceff5d4 100644
+--- a/lib/model/caption_modules/train_caption.py
++++ b/lib/model/caption_modules/train_caption.py
+@@ -20,9 +20,9 @@ import torchvision.transforms as transforms
+ from torch.utils.data.sampler import Sampler
+ from model.utils.net_utils import adjust_learning_rate
+ from torch.nn.utils.rnn import pack_padded_sequence
+-from model.caption_modules.utils import AverageMeter, fine_tune, clip_gradient, accuracy
++from model.caption_modules.utils import AverageMeter, fine_tune, clip_gradient, accuracy, save_model
+ from model.utils.net_utils import save_checkpoint
+-from model.utils.config import cfg
++import wandb
+ 
+ 
+ def train_caption(args,
+@@ -33,15 +33,17 @@ def train_caption(args,
+                   lstm,
+                   lstm_optimizer,
+                   iter_num=0):
+-    if args.mGPUs:
+-        lstm_decoder = nn.DataParallel(lstm_decoder)
+     grad_clip = 5.  # clip gradients at an absolute value of
+-    fine_tune(faster_rcnn.RCNN_base, freeze=True)
++    fine_tune(faster_rcnn.RCNN_base
++              if not args.mGPUs else faster_rcnn.module.RCNN_base,
++              freeze=True)
+     faster_rcnn.train()
+     lstm.train()
+     iter_num = iter_num
+     has_finetuned = False
+     has_adjusted_lr = False
++    decay_schedule = 0
++    print(f"cap_sampling {args.cap_sampling}")
+     for epoch in range(args.start_epoch, args.max_epochs + 1):
+         if iter_num >= args.caption_total_iter:
+             print(f"caption training stopped at iteration {iter_num}")
+@@ -53,59 +55,30 @@ def train_caption(args,
+         top5accs = AverageMeter()  # top5 accuracy
+ 
+         start = time.time()
+-        if epoch % 4 == 0:
+-            save_name = os.path.join(
+-                args.output_dir,
+-                'cap_faster_rcnn_{}_{}_{}.pth'.format(args.session, epoch,
+-                                                      iter_num))
+-            save_checkpoint(
+-                {
+-                    'session':
+-                    args.session,
+-                    'epoch':
+-                    epoch + 1,
+-                    'iter_num':
+-                    iter_num + 1,
+-                    'model':
+-                    faster_rcnn.module.state_dict()
+-                    if args.mGPUs else faster_rcnn.state_dict(),
+-                    'optimizer':
+-                    faster_rcnn_optimizer.state_dict(),
+-                    'pooling_mode':
+-                    cfg.POOLING_MODE,
+-                    'class_agnostic':
+-                    args.class_agnostic,
+-                }, save_name)
+-            print('save model: {}'.format(save_name))
+-            save_name = os.path.join(
+-                args.output_dir,
+-                'cap_lstm_{}_{}_{}.pth'.format(args.session, epoch, iter_num))
+-            save_checkpoint(
+-                {
+-                    'session':
+-                    args.session,
+-                    'epoch':
+-                    epoch + 1,
+-                    'iter_num':
+-                    iter_num + 1,
+-                    'model':
+-                    lstm.module.state_dict()
+-                    if args.mGPUs else lstm.state_dict(),
+-                    'optimizer':
+-                    lstm_optimizer.state_dict(),
+-                    'pooling_mode':
+-                    cfg.POOLING_MODE,
+-                    'class_agnostic':
+-                    args.class_agnostic,
+-                }, save_name)
+-            print('save model: {}'.format(save_name))
++
++        save_model(args, iter_num, epoch, faster_rcnn, faster_rcnn_optimizer,
++                   lstm, lstm_optimizer)
++
+         for i, data in enumerate(dataloader):
++            args.cap_curr_iter = i
+             if iter_num >= args.caption_total_iter:
+                 break
++            p = iter_num / args.caption_total_iter
++            if args.cap_sampling:
++                decay_schedule = (2.0 /
++                                  (1. + np.exp(-args.decay_schedule * p)) - 1)
++                if decay_schedule >= 0.5:
++                    decay_schedule = 0.5
++                use_sampling = np.random.random() < decay_schedule
++            else:
++                use_sampling = False
++
+             iter_num += 1
+             if iter_num >= args.caption_ft_begin_iter and not has_finetuned:
+                 print("caption: begin finetuning")
+-                fine_tune(faster_rcnn.RCNN_base, freeze=False)
++                fine_tune(faster_rcnn.RCNN_base
++                          if not args.mGPUs else faster_rcnn.module.RCNN_base,
++                          freeze=False)
+                 has_finetuned = True
+             if (iter_num >=
+                 (args.caption_total_iter * 0.75)) and not has_adjusted_lr:
+@@ -115,28 +88,48 @@ def train_caption(args,
+                     adjust_learning_rate(faster_rcnn_optimizer, 0.1)
+                 has_adjusted_lr = True
+             imgs = data[0].cuda()
+-            captions = data[4].cuda()
+-            caplen = data[5].cuda()
+-
++            all_captions = data[4].cuda()
++            all_caplen = data[5].cuda()
++            if not args.mGPUs:
++                encoded_imgs = faster_rcnn.RCNN_base(imgs)
++            else:
++                encoded_imgs = faster_rcnn.module.RCNN_base(imgs)
++            total_loss = 0
+             data_time.update(time.time() - start)
+-            imgs = faster_rcnn.RCNN_base(imgs)
+-            caption_lengths, _ = caplen.squeeze(1).sort(dim=0, descending=True)
+-            # decode_lengths = (caption_lengths - 1).tolist()
+-            # args.decode_lengths = decode_lengths
+-            scores, caps_sorted, decode_lengths, alphas, sort_ind = lstm(
+-                imgs, captions, caplen)
+-            targets = caps_sorted[:, 1:]
+-            scores_copy = scores.clone()
+-            targets_copy = targets.clone()
+-            scores, *_ = pack_padded_sequence(scores,
+-                                              decode_lengths,
+-                                              batch_first=True)
+-            targets, *_ = pack_padded_sequence(targets,
+-                                               decode_lengths,
+-                                               batch_first=True)
+-            loss = lstm_criterion(scores, targets)
+-            loss += args.alpha_c * ((1. - alphas.sum(dim=1))**2).mean()
++            for j in range(all_captions.size(1)):
++                captions = all_captions[:, j, :]
++                caplen = all_caplen[:, j]
++                if not args.mGPUs:
++                    scores, caps_sorted, decode_lengths, alphas, sort_ind = lstm(
++                        encoded_imgs, captions, caplen, use_sampling)
++                    targets = caps_sorted[:, 1:]
++                    if i % 50 == 0:
++                        scores_copy = scores.clone()
++                        targets_copy = targets.clone()
++                    scores, *_ = pack_padded_sequence(scores,
++                                                      decode_lengths,
++                                                      batch_first=True)
++                    targets, *_ = pack_padded_sequence(targets,
++                                                       decode_lengths,
++                                                       batch_first=True)
++                    loss = lstm_criterion(scores, targets)
++                    loss += args.alpha_c * ((1. - alphas.sum(dim=1))**2).mean()
++                else:
++                    loss = lstm(encoded_imgs,
++                                captions,
++                                caplen,
++                                use_sampling,
++                                data_parallel=args.mGPUs,
++                                lstm_criterion=lstm_criterion,
++                                args=args)
++                    if i % 50 == 0:
++                        scores_copy = args.scores_copy
++                        targets_copy = args.targets_copy
++                        decode_lengths = args.decode_lengths
++                    loss = loss.mean()
+ 
++                total_loss += loss
++            loss = total_loss / all_captions.size(1)
+             lstm_optimizer.zero_grad()
+             if iter_num >= args.caption_ft_begin_iter:
+                 faster_rcnn_optimizer.zero_grad()
+@@ -149,9 +142,19 @@ def train_caption(args,
+             lstm_optimizer.step()
+             if iter_num >= args.caption_ft_begin_iter:
+                 faster_rcnn_optimizer.step()
+-            top5 = accuracy(scores, targets, 5)
+-            losses.update(loss.item(), sum(decode_lengths))
+-            top5accs.update(top5, sum(decode_lengths))
++            top5 = accuracy(scores, targets, 5) if not args.mGPUs else 0
++            if not args.mGPUs:
++                losses.update(loss.item(), sum(decode_lengths))
++                top5accs.update(top5, sum(decode_lengths))
++            else:
++                losses.update(loss.item())
++                top5accs.update(top5)
++            if args.wandb is not None:
++                wandb.log({
++                    "loss": total_loss.item() / all_captions.size(1),
++                    "top5acc": top5,
++                    "decay_schedule": decay_schedule
++                })
+             batch_time.update(time.time() - start)
+ 
+             if i % 50 == 0:
+@@ -161,12 +164,12 @@ def train_caption(args,
+                 temp_preds = list()
+                 temp_targets = list()
+                 for j, p in enumerate(preds):
+-                    temp_preds.append(
+-                        preds[j][:decode_lengths[j]])  # remove pads
++                    temp_preds.append(preds[j][:decode_lengths[j] -
++                                               1])  # remove pads
+                 preds = temp_preds
+                 for j, p in enumerate(targets_copy):
+-                    temp_targets.append(
+-                        targets_copy[j][:decode_lengths[j]])  # remove pads
++                    temp_targets.append(targets_copy[j][:decode_lengths[j] -
++                                                        1])  # remove pads
+                 targets_copy = temp_targets
+                 for w in range(len(preds)):
+                     pred_words = [args.vocab.idx2word[ind] for ind in preds[w]]
+@@ -200,40 +203,5 @@ def train_caption(args,
+ 
+ 
+ #####################save model
+-    save_name = os.path.join(
+-        args.output_dir,
+-        'cap_faster_rcnn_{}_{}_{}.pth'.format(args.session, epoch, iter_num))
+-    save_checkpoint(
+-        {
+-            'session':
+-            args.session,
+-            'epoch':
+-            epoch + 1,
+-            'iter_num':
+-            iter_num + 1,
+-            'model':
+-            faster_rcnn.module.state_dict()
+-            if args.mGPUs else faster_rcnn.state_dict(),
+-            'optimizer':
+-            faster_rcnn_optimizer.state_dict(),
+-            'pooling_mode':
+-            cfg.POOLING_MODE,
+-            'class_agnostic':
+-            args.class_agnostic,
+-        }, save_name)
+-    print('save model: {}'.format(save_name))
+-    save_name = os.path.join(
+-        args.output_dir,
+-        'cap_lstm_{}_{}_{}.pth'.format(args.session, epoch, iter_num))
+-    save_checkpoint(
+-        {
+-            'session': args.session,
+-            'epoch': epoch + 1,
+-            'iter_num': iter_num + 1,
+-            'model':
+-            lstm.module.state_dict() if args.mGPUs else lstm.state_dict(),
+-            'optimizer': lstm_optimizer.state_dict(),
+-            'pooling_mode': cfg.POOLING_MODE,
+-            'class_agnostic': args.class_agnostic,
+-        }, save_name)
+-    print('save model: {}'.format(save_name))
+\ No newline at end of file
++    save_model(args, iter_num, epoch, faster_rcnn, faster_rcnn_optimizer, lstm,
++               lstm_optimizer)
+diff --git a/lib/model/caption_modules/utils.py b/lib/model/caption_modules/utils.py
+index 350c61b..2ef49ca 100644
+--- a/lib/model/caption_modules/utils.py
++++ b/lib/model/caption_modules/utils.py
+@@ -20,8 +20,50 @@ import torchvision.transforms as transforms
+ from torch.utils.data.sampler import Sampler
+ from model.utils.net_utils import adjust_learning_rate
+ from torch.nn.utils.rnn import pack_padded_sequence
++from model.utils.net_utils import save_checkpoint
++from model.utils.config import cfg
+ 
+ 
++def save_model(args, iter_num, epoch, faster_rcnn, faster_rcnn_optimizer, lstm,
++               lstm_optimizer):
++    save_name = os.path.join(
++        args.output_dir,
++        'cap_faster_rcnn_{}_{}_{}.pth'.format(args.session, epoch, iter_num))
++    save_checkpoint(
++        {
++            'session':
++            args.session,
++            'epoch':
++            epoch + 1,
++            'iter_num':
++            0,
++            'model':
++            faster_rcnn.module.state_dict()
++            if args.mGPUs else faster_rcnn.state_dict(),
++            'optimizer':
++            faster_rcnn_optimizer.state_dict(),
++            'pooling_mode':
++            cfg.POOLING_MODE,
++            'class_agnostic':
++            args.class_agnostic,
++        }, save_name)
++    print('save model: {}'.format(save_name))
++    save_name = os.path.join(
++        args.output_dir,
++        'cap_lstm_{}_{}_{}.pth'.format(args.session, epoch, iter_num))
++    save_checkpoint(
++        {
++            'session': args.session,
++            'epoch': epoch + 1,
++            'iter_num': iter_num + 1,
++            'model':
++            lstm.module.state_dict() if args.mGPUs else lstm.state_dict(),
++            'optimizer': lstm_optimizer.state_dict(),
++            'pooling_mode': cfg.POOLING_MODE,
++            'class_agnostic': args.class_agnostic,
++        }, save_name)
++    print('save model: {}'.format(save_name))
++
+ 
+ class AverageMeter(object):
+     """
+@@ -56,7 +98,7 @@ def fine_tune(model, freeze=False):
+                 p.requires_grad = True
+ 
+ 
+-def clip_gradient(optimizer, grad_clip):
++def clip_gradient(optimizer, grad_clip=5):
+     """
+     Clips gradients computed during backpropagation to avoid explosion of gradients.
+     :param optimizer: optimizer with the gradients to be clipped
+diff --git a/lib/model/caption_modules/validate_caption.py b/lib/model/caption_modules/validate_caption.py
+index bc6637a..976ca4c 100644
+--- a/lib/model/caption_modules/validate_caption.py
++++ b/lib/model/caption_modules/validate_caption.py
+@@ -22,6 +22,7 @@ from model.utils.net_utils import adjust_learning_rate
+ from torch.nn.utils.rnn import pack_padded_sequence
+ from model.caption_modules.utils import AverageMeter, fine_tune, clip_gradient, accuracy
+ from nltk.translate.bleu_score import corpus_bleu
++from torchvision.utils import save_image
+ 
+ 
+ def validate_caption(args, val_dataloader, lstm_criterion, faster_rcnn, lstm):
+@@ -37,7 +38,7 @@ def validate_caption(args, val_dataloader, lstm_criterion, faster_rcnn, lstm):
+     references = list(
+     )  # references (true captions) for calculating BLEU-4 score
+     hypotheses = list()  # hypotheses (predictions)
+-
++    greedy_hypotheses = list()
+     # explicitly disable gradient calculation to avoid CUDA memory error
+     # solves the issue #57
+     with torch.no_grad():
+@@ -46,14 +47,17 @@ def validate_caption(args, val_dataloader, lstm_criterion, faster_rcnn, lstm):
+                 break
+             iter_num += 1
+             imgs = data[0].cuda()
+-            captions = data[4].cuda()
+-            caplen = data[5].cuda()
++            all_captions = data[4].cuda()
++            all_caplen = data[5].cuda()
+             imgs = faster_rcnn.RCNN_base(imgs)
+-            caption_lengths, _ = caplen.squeeze(1).sort(dim=0, descending=True)
+-            # decode_lengths = (caption_lengths - 1).tolist()
+-            # args.decode_lengths = decode_lengths
++
++            captions = all_captions[:, 0, :]
++            caplen = all_caplen[:, 0]
+             scores, caps_sorted, decode_lengths, alphas, sort_ind = lstm(
+                 imgs, captions, caplen)
++            sentence, greedy_alphas, greedy_scores, _ = lstm.greedy_search(
++                imgs)
++
+             targets = caps_sorted[:, 1:]
+             scores_copy = scores.clone()
+ 
+@@ -85,35 +89,94 @@ def validate_caption(args, val_dataloader, lstm_criterion, faster_rcnn, lstm):
+             # Store references (true captions), and hypothesis (prediction) for each image
+             # If for n images, we have n hypotheses, and references a, b, c... for each image, we need -
+             # references = [[ref1a, ref1b, ref1c], [ref2a, ref2b], ...], hypotheses = [hyp1, hyp2, ...]
+-
++            # Greed Hypotheses
++
++            sentence = sentence.tolist()
++            for j in range(len(sentence)):
++                current_sentence = sentence[j]
++                temp_sentence = []
++                for p, word in enumerate(current_sentence):
++                    if word == args.vocab.word2idx['<end>']:
++                        break
++                    temp_sentence.append(word)
++                    if iter_num % 50 == 0:
++                        # orig_imgs = data[0]
++                        # for img_idx in range(orig_imgs.size(0)):
++                        #     current_img = orig_imgs[img_idx]
++                        #     save_image(
++                        #         current_img,
++                        #         f'{args.output_dir}/img_{iter_num}_{img_idx}.png',
++                        #         normalize=True)
++                        str_word = args.vocab.idx2word[word]
++                        print(str_word + ' ', end='')
++                    if word == args.vocab.word2idx['.']:
++                        break
++                sentence[j] = temp_sentence
++                if iter_num % 50 == 0:
++                    print('')
++            greedy_hypotheses.extend(sentence)
+             # Hypotheses
+             _, preds = torch.max(scores_copy, dim=2)
+             preds = preds.tolist()
+             temp_preds = list()
+             for j, p in enumerate(preds):
+-                temp_preds.append(preds[j][:decode_lengths[j]])  # remove pads
++                temp_preds.append(preds[j][:decode_lengths[j] -
++                                           1])  # remove pads
+             preds = temp_preds
+ 
+             hypotheses.extend(preds)
+ 
+-            temp_targets = targets.tolist()
+-            targets = list()
+-            targets.append(temp_targets)
+-            temp_targets = list()
+-            for j, p in enumerate(targets):
+-                temp_targets.append(targets[j][:decode_lengths[j]])
+-            targets = temp_targets
+-            temp_list = list()
+-            temp_list.append(targets)
+-            references.extend(temp_list)
++            #References
++            if all_captions.size(0) != 1:
++                all_captions = all_captions[
++                    sort_ind]  # because images were sorted in the decoder
++            for j in range(all_captions.shape[0]):
++                img_caps = all_captions[j].tolist()
++                img_captions = list(
++                    map(
++                        lambda c: [
++                            w for w in c if w not in {
++                                args.vocab.word2idx['<start>'], args.vocab.
++                                word2idx['<end>'], args.vocab.word2idx['<pad>']
++                            }
++                        ], img_caps))  # remove <start> and pads
++                references.append(img_captions)
+ 
+             assert len(references) == len(hypotheses)
+ 
+         # Calculate BLEU-4 scores
+-        bleu4 = corpus_bleu(references, hypotheses)
+-
++        # bleu4 = corpus_bleu(references, hypotheses)
++        bleu1 = corpus_bleu(references, hypotheses, weights=(1.0, 0, 0, 0))
++        bleu2 = corpus_bleu(references, hypotheses, weights=(0.5, 0.5, 0, 0))
++        bleu3 = corpus_bleu(references,
++                            hypotheses,
++                            weights=(1.0 / 3.0, 1.0 / 3.0, 1.0 / 3.0, 0))
++        bleu4 = corpus_bleu(references,
++                            hypotheses,
++                            weights=(0.25, 0.25, 0.25, 0.25))
++        print(
++            '\n * LOSS - {loss.avg:.3f}, TOP-5 ACCURACY - {top5.avg:.3f}, BLEU-1 - {bleu1}, BLEU-2 - {bleu2}, BLEU-3 - {bleu3}, BLEU-4 - {bleu4}\n'
++            .format(loss=losses,
++                    top5=top5accs,
++                    bleu1=bleu1,
++                    bleu2=bleu2,
++                    bleu3=bleu3,
++                    bleu4=bleu4))
++        greedy_bleu1 = corpus_bleu(references,
++                                   greedy_hypotheses,
++                                   weights=(1.0, 0, 0, 0))
++        greedy_bleu2 = corpus_bleu(references,
++                                   greedy_hypotheses,
++                                   weights=(0.5, 0.5, 0, 0))
++        greedy_bleu3 = corpus_bleu(references,
++                                   greedy_hypotheses,
++                                   weights=(1.0 / 3.0, 1.0 / 3.0, 1.0 / 3.0,
++                                            0))
++        greedy_bleu4 = corpus_bleu(references,
++                                   greedy_hypotheses,
++                                   weights=(0.25, 0.25, 0.25, 0.25))
+         print(
+-            '\n * LOSS - {loss.avg:.3f}, TOP-5 ACCURACY - {top5.avg:.3f}, BLEU-4 - {bleu}\n'
+-            .format(loss=losses, top5=top5accs, bleu=bleu4))
++            f'greedy_BLEU-1 {greedy_bleu1}, greedy_BLEU-2 {greedy_bleu2},greedy_BLEU-3 {greedy_bleu3},greedy_BLEU-4 {greedy_bleu4}'
++        )
+ 
+     return bleu4
+\ No newline at end of file
+diff --git a/lib/model/faster_rcnn/faster_rcnn.py b/lib/model/faster_rcnn/faster_rcnn.py
+index 6496162..f8fdcd7 100644
+--- a/lib/model/faster_rcnn/faster_rcnn.py
++++ b/lib/model/faster_rcnn/faster_rcnn.py
+@@ -19,6 +19,7 @@ import time
+ import pdb
+ from model.utils.net_utils import _smooth_l1_loss, _crop_pool_layer, _affine_grid_gen, _affine_theta
+ 
++
+ class _fasterRCNN(nn.Module):
+     """ faster RCNN """
+     def __init__(self, classes, class_agnostic):
+@@ -37,8 +38,10 @@ class _fasterRCNN(nn.Module):
+         # self.RCNN_roi_pool = _RoIPooling(cfg.POOLING_SIZE, cfg.POOLING_SIZE, 1.0/16.0)
+         # self.RCNN_roi_align = RoIAlignAvg(cfg.POOLING_SIZE, cfg.POOLING_SIZE, 1.0/16.0)
+ 
+-        self.RCNN_roi_pool = ROIPool((cfg.POOLING_SIZE, cfg.POOLING_SIZE), 1.0/16.0)
+-        self.RCNN_roi_align = ROIAlign((cfg.POOLING_SIZE, cfg.POOLING_SIZE), 1.0/16.0, 0)
++        self.RCNN_roi_pool = ROIPool((cfg.POOLING_SIZE, cfg.POOLING_SIZE),
++                                     1.0 / 16.0)
++        self.RCNN_roi_align = ROIAlign((cfg.POOLING_SIZE, cfg.POOLING_SIZE),
++                                       1.0 / 16.0, 0)
+ 
+     def forward(self, im_data, im_info, gt_boxes, num_boxes):
+         batch_size = im_data.size(0)
+@@ -51,7 +54,8 @@ class _fasterRCNN(nn.Module):
+         base_feat = self.RCNN_base(im_data)
+ 
+         # feed base feature map tp RPN to obtain rois
+-        rois, rpn_loss_cls, rpn_loss_bbox = self.RCNN_rpn(base_feat, im_info, gt_boxes, num_boxes)
++        rois, rpn_loss_cls, rpn_loss_bbox = self.RCNN_rpn(
++            base_feat, im_info, gt_boxes, num_boxes)
+ 
+         # if it is training phrase, then use ground trubut bboxes for refining
+         if self.training:
+@@ -60,8 +64,10 @@ class _fasterRCNN(nn.Module):
+ 
+             rois_label = Variable(rois_label.view(-1).long())
+             rois_target = Variable(rois_target.view(-1, rois_target.size(2)))
+-            rois_inside_ws = Variable(rois_inside_ws.view(-1, rois_inside_ws.size(2)))
+-            rois_outside_ws = Variable(rois_outside_ws.view(-1, rois_outside_ws.size(2)))
++            rois_inside_ws = Variable(
++                rois_inside_ws.view(-1, rois_inside_ws.size(2)))
++            rois_outside_ws = Variable(
++                rois_outside_ws.view(-1, rois_outside_ws.size(2)))
+         else:
+             rois_label = None
+             rois_target = None
+@@ -76,7 +82,7 @@ class _fasterRCNN(nn.Module):
+         if cfg.POOLING_MODE == 'align':
+             pooled_feat = self.RCNN_roi_align(base_feat, rois.view(-1, 5))
+         elif cfg.POOLING_MODE == 'pool':
+-            pooled_feat = self.RCNN_roi_pool(base_feat, rois.view(-1,5))
++            pooled_feat = self.RCNN_roi_pool(base_feat, rois.view(-1, 5))
+ 
+         # feed pooled features to top model
+         pooled_feat = self._head_to_tail(pooled_feat)
+@@ -85,8 +91,12 @@ class _fasterRCNN(nn.Module):
+         bbox_pred = self.RCNN_bbox_pred(pooled_feat)
+         if self.training and not self.class_agnostic:
+             # select the corresponding columns according to roi labels
+-            bbox_pred_view = bbox_pred.view(bbox_pred.size(0), int(bbox_pred.size(1) / 4), 4)
+-            bbox_pred_select = torch.gather(bbox_pred_view, 1, rois_label.view(rois_label.size(0), 1, 1).expand(rois_label.size(0), 1, 4))
++            bbox_pred_view = bbox_pred.view(bbox_pred.size(0),
++                                            int(bbox_pred.size(1) / 4), 4)
++            bbox_pred_select = torch.gather(
++                bbox_pred_view, 1,
++                rois_label.view(rois_label.size(0), 1,
++                                1).expand(rois_label.size(0), 1, 4))
+             bbox_pred = bbox_pred_select.squeeze(1)
+ 
+         # compute object classification probability
+@@ -101,13 +111,13 @@ class _fasterRCNN(nn.Module):
+             RCNN_loss_cls = F.cross_entropy(cls_score, rois_label)
+ 
+             # bounding box regression L1 loss
+-            RCNN_loss_bbox = _smooth_l1_loss(bbox_pred, rois_target, rois_inside_ws, rois_outside_ws)
+-
++            RCNN_loss_bbox = _smooth_l1_loss(bbox_pred, rois_target,
++                                             rois_inside_ws, rois_outside_ws)
+ 
+         cls_prob = cls_prob.view(batch_size, rois.size(1), -1)
+         bbox_pred = bbox_pred.view(batch_size, rois.size(1), -1)
+ 
+-        return rois, cls_prob, bbox_pred, rpn_loss_cls, rpn_loss_bbox, RCNN_loss_cls, RCNN_loss_bbox, rois_label
++        return rois, cls_prob, bbox_pred, rpn_loss_cls, rpn_loss_bbox, RCNN_loss_cls, RCNN_loss_bbox, rois_label, base_feat
+ 
+     def _init_weights(self):
+         def normal_init(m, mean, stddev, truncated=False):
+@@ -116,7 +126,8 @@ class _fasterRCNN(nn.Module):
+             """
+             # x is a parameter
+             if truncated:
+-                m.weight.data.normal_().fmod_(2).mul_(stddev).add_(mean) # not a perfect approximation
++                m.weight.data.normal_().fmod_(2).mul_(stddev).add_(
++                    mean)  # not a perfect approximation
+             else:
+                 m.weight.data.normal_(mean, stddev)
+                 m.bias.data.zero_()
+diff --git a/lib/roi_data_layer/roibatchLoader.py b/lib/roi_data_layer/roibatchLoader.py
+index 3d2d4fc..0762adb 100644
+--- a/lib/roi_data_layer/roibatchLoader.py
++++ b/lib/roi_data_layer/roibatchLoader.py
+@@ -27,7 +27,8 @@ class roibatchLoader(data.Dataset):
+                  batch_size,
+                  num_classes,
+                  training=True,
+-                 normalize=None):
++                 normalize=None,
++                 domain=None):
+         self._roidb = roidb
+         self._num_classes = num_classes
+         # we make the height of image consistent to trim_height, trim_width
+@@ -40,6 +41,7 @@ class roibatchLoader(data.Dataset):
+         self.ratio_index = ratio_index
+         self.batch_size = batch_size
+         self.data_size = len(self.ratio_list)
++        self.domain = domain
+ 
+         # given the ratio_list, we want to make the ratio same for each batch.
+         self.ratio_list_batch = torch.Tensor(self.data_size).zero_()
+@@ -73,10 +75,14 @@ class roibatchLoader(data.Dataset):
+         blobs = get_minibatch(minibatch_db, self._num_classes)
+         data = torch.from_numpy(blobs['data'])
+         im_info = torch.from_numpy(blobs['im_info'])
++        if self.domain is not None:
++            domain = self.domain
+         if 'caption' in self._roidb[0]:
+             caption = torch.LongTensor(blobs['caption'])
+-            # caplen = torch.LongTensor([blobs['caplen']])
+             caplen = torch.LongTensor(blobs['caplen'])
++            # caplen = torch.LongTensor([blobs['caplen']])
++            # caption = blobs['caption']
++            # caplen =
+         # we need to random shuffle the bounding box.
+         data_height, data_width = data.size(1), data.size(2)
+         if self.training:
+@@ -216,9 +222,9 @@ class roibatchLoader(data.Dataset):
+             padding_data = padding_data.permute(2, 0, 1).contiguous()
+             im_info = im_info.view(3)
+             if 'caption' in self._roidb[0]:
+-                return padding_data, im_info, gt_boxes_padding, num_boxes, caption, caplen
++                return padding_data, im_info, gt_boxes_padding, num_boxes, caption, caplen, domain if self.domain is not None else -1
+             else:
+-                return padding_data, im_info, gt_boxes_padding, num_boxes
++                return padding_data, im_info, gt_boxes_padding, num_boxes, domain if self.domain is not None else -1
+         else:
+             data = data.permute(0, 3, 1,
+                                 2).contiguous().view(3, data_height,
+@@ -228,9 +234,9 @@ class roibatchLoader(data.Dataset):
+             gt_boxes = torch.FloatTensor([1, 1, 1, 1, 1])
+             num_boxes = 0
+             if 'caption' in self._roidb[0]:
+-                return data, im_info, gt_boxes, num_boxes, caption, caplen
++                return data, im_info, gt_boxes, num_boxes, caption, caplen, domain if self.domain is not None else -1
+             else:
+-                return data, im_info, gt_boxes, num_boxes
++                return data, im_info, gt_boxes, num_boxes, domain if self.domain is not None else -1
+ 
+     def __len__(self):
+         return len(self._roidb)
+diff --git a/lib/roi_data_layer/roidb.py b/lib/roi_data_layer/roidb.py
+index 729ef02..cfcc393 100644
+--- a/lib/roi_data_layer/roidb.py
++++ b/lib/roi_data_layer/roidb.py
+@@ -133,5 +133,8 @@ def combined_roidb(imdb_names, training=True):
+         roidb = filter_roidb(roidb)
+ 
+     ratio_list, ratio_index = rank_roidb_ratio(roidb)
+-
+-    return imdb, roidb, ratio_list, ratio_index, imdb._vocab if 'coco' in imdb.name else None
++    try:
++        vocab = imdb._vocab
++    except:
++        vocab = None
++    return imdb, roidb, ratio_list, ratio_index, vocab
+diff --git a/test_net.py b/test_net.py
+index 916240b..4b32cc8 100644
+--- a/test_net.py
++++ b/test_net.py
+@@ -208,8 +208,9 @@ if __name__ == '__main__':
+             input_dir)
+     load_name = os.path.join(
+         input_dir,
+-        'faster_rcnn_{}_{}_{}.pth'.format(args.checksession, args.checkepoch,
+-                                          args.checkpoint))
++        'cap_faster_rcnn_{}_{}_{}.pth'.format(args.checksession,
++                                              args.checkepoch,
++                                              args.checkpoint))
+ 
+     # initilize the network here.
+     if args.net == 'vgg16':
+@@ -313,8 +314,7 @@ if __name__ == '__main__':
+         rois, cls_prob, bbox_pred, \
+         rpn_loss_cls, rpn_loss_box, \
+         RCNN_loss_cls, RCNN_loss_bbox, \
+-        rois_label = fasterRCNN(im_data, im_info, gt_boxes, num_boxes)
+-
++        rois_label, _ = fasterRCNN(im_data, im_info, gt_boxes, num_boxes)
+ 
+         scores = cls_prob.data
+         boxes = rois.data[:, :, 1:5]
+diff --git a/test_script.sh b/test_script.sh
+index db87543..4706698 100644
+--- a/test_script.sh
++++ b/test_script.sh
+@@ -1,3 +1,3 @@
+-CUDA_VISIBLE_DEVICES=1 python test_net.py --dataset clipart --net vgg16 \
+-                   --checksession 1 --checkepoch 100 --checkpoint 82 \
+-                   --cuda --input_model clipart
+\ No newline at end of file
++CUDA_VISIBLE_DEVICES=5 python test_net.py --dataset clipart --net vgg16 \
++                   --checksession 1 --checkepoch 2 --checkpoint 7000 \
++                   --cuda --input_model caption_model_decay10_dw1
+\ No newline at end of file
+diff --git a/train_script_2.sh b/train_script_2.sh
+deleted file mode 100755
+index 34fe10c..0000000
+--- a/train_script_2.sh
++++ /dev/null
+@@ -1,10 +0,0 @@
+-CUDA_VISIBLE_DEVICES=2,3 python trainval_cap_net.py \
+-                   --dataset clipart --net vgg16 \
+-                   --bs 12 \
+-                   --nw 6 \
+-                   --lr 0.001 \
+-                   --cuda \
+-                   --mGPUs \
+-                   --epochs 100 \
+-                   --save_model_dir clipart \
+-                   --lr_decay_step 40
+diff --git a/trainval_cap_net.py b/trainval_cap_net.py
+index 59b6478..556a2fe 100644
+--- a/trainval_cap_net.py
++++ b/trainval_cap_net.py
+@@ -29,13 +29,17 @@ from roi_data_layer.roibatchLoader import roibatchLoader
+ from model.utils.config import cfg, cfg_from_file, cfg_from_list, get_output_dir
+ from model.utils.net_utils import weights_normal_init, save_net, load_net, \
+       adjust_learning_rate, save_checkpoint, clip_gradient, get_lr_at_iter
+-
++from model.utils.set_random_seed import set_random_seed
+ from model.faster_rcnn.vgg16 import vgg16
+ from model.faster_rcnn.resnet import resnet
+ from model.caption_modules.model import DecoderWithAttention
+ from torch.nn.utils.rnn import pack_padded_sequence
+ from model.caption_modules.caption_main import caption_main
++from model.discriminator.dann import DANN, Discriminator
+ import copy
++from model.caption_modules.utils import fine_tune
++from model.discriminator.distance import mmd_rbf_noaccelerate, CORAL_loss
++import math
+ 
+ 
+ def parse_args():
+@@ -183,10 +187,20 @@ def parse_args():
+                         help='save_model_dir',
+                         default="cityscape_multi",
+                         type=str)
++    parser.add_argument('--wandb',
++                        type=str,
++                        help='Plot on wandb ',
++                        default=None)
++
++    parser.add_argument('--wandb_id',
++                        type=str,
++                        help='id for the current run',
++                        default=None)
+     #caption hyerparameter
+     parser.add_argument('--caption_for_da',
+                         help='use caption for domain adaptation',
+-                        action='store_true')
++                        action='store_true',
++                        default=False)
+     parser.add_argument('--caption_ft_begin_iter',
+                         help='caption fine tune begin iterations',
+                         default=11000,
+@@ -235,6 +249,27 @@ def parse_args():
+                         help='resume the training',
+                         default=False,
+                         type=bool)
++    parser.add_argument('--cap_sampling',
++                        help='scheduled sampling',
++                        action='store_true',
++                        default=False)
++    parser.add_argument('--cap_pretraining',
++                        help='cap_pretraining',
++                        action='store_true',
++                        default=False)
++    parser.add_argument('--decay_schedule',
++                        help='scheduled decay',
++                        default=3,
++                        type=float)
++    parser.add_argument('--dann_weight',
++                        help='dann weight',
++                        default=0.1,
++                        type=float)
++    parser.add_argument('--weight_decay',
++                        type=float,
++                        help='Weight Decay',
++                        default=5e-4)
++
+     args = parser.parse_args()
+     return args
+ 
+@@ -271,9 +306,10 @@ class sampler(Sampler):
+ 
+ if __name__ == '__main__':
+     args = parse_args()
+-
++    # os.environ['CUDA_VISIBLE_DEVICES'] = "0,1,2"
+     print('Called with args:')
+     print(args)
++    print(f"cap_sampling {args.cap_sampling}")
+ 
+     if args.dataset == "pascal_voc":
+         args.imdb_name = "voc_2007_trainval"
+@@ -302,6 +338,19 @@ if __name__ == '__main__':
+             'ANCHOR_SCALES', '[4, 8, 16, 32]', 'ANCHOR_RATIOS', '[0.5,1,2]',
+             'MAX_NUM_GT_BOXES', '20'
+         ]
++    elif args.dataset == "coco_clipart":
++        args.imdb_name = "coco_2014_valminusminival"
++        args.imdbval_name = "coco_2014_minival"
++        args.set_cfgs = [
++            'ANCHOR_SCALES', '[4, 8, 16, 32]', 'ANCHOR_RATIOS', '[0.5,1,2]',
++            'MAX_NUM_GT_BOXES', '50'
++        ]
++        args.tgt_imdb_name = "clipart1k_train"
++        args.tgt_imdbval_name = "clipart1k_test"
++        args.tgt_set_cfgs = [
++            'ANCHOR_SCALES', '[4, 8, 16, 32]', 'ANCHOR_RATIOS', '[0.5,1,2]',
++            'MAX_NUM_GT_BOXES', '20'
++        ]
+     elif args.dataset == "clipart":
+         args.imdb_name = "clipart1k_train"
+         args.imdbval_name = "clipart1k_test"
+@@ -331,10 +380,14 @@ if __name__ == '__main__':
+         cfg_from_file(args.cfg_file)
+     if args.set_cfgs is not None:
+         cfg_from_list(args.set_cfgs)
+-
++    if args.wandb is not None:
++        import wandb
++        wandb.init(project=args.wandb, name=args.wandb_id)
++    else:
++        wandb = None
+     print('Using config:')
+     pprint.pprint(cfg)
+-    np.random.seed(cfg.RNG_SEED)
++    set_random_seed(cfg.RNG_SEED)
+ 
+     #torch.backends.cudnn.benchmark = True
+     if torch.cuda.is_available() and not args.cuda:
+@@ -349,6 +402,7 @@ if __name__ == '__main__':
+     #source data
+     imdb, roidb, ratio_list, ratio_index, vocab = combined_roidb(
+         args.imdb_name)
++    _, _, _, _, vocab = combined_roidb("coco_2014_train")
+     train_size = len(roidb)
+ 
+     print('{:d} roidb entries'.format(len(roidb)))
+@@ -361,7 +415,7 @@ if __name__ == '__main__':
+     sampler_batch = sampler(train_size, args.batch_size)
+ 
+     dataset = roibatchLoader(roidb, ratio_list, ratio_index, args.batch_size, \
+-                             imdb.num_classes, training=True)
++                             imdb.num_classes, training=True,domain=0)
+ 
+     dataloader = torch.utils.data.DataLoader(dataset,
+                                              batch_size=args.batch_size,
+@@ -371,20 +425,23 @@ if __name__ == '__main__':
+                                              pin_memory=True)
+ 
+     #target data
+-    # tgt_imdb, tgt_roidb, tgt_ratio_list, tgt_ratio_index, _ = combined_roidb(
+-    #     args.tgt_imdb_name)
+-    # tgt_train_size = len(tgt_roidb)
+-    # tgt_sampler_batch = sampler(tgt_train_size, args.batch_size)
+-    # tgt_dataset = roibatchLoader(tgt_roidb,
+-    #                              tgt_ratio_list,
+-    #                              tgt_ratio_index,
+-    #                              args.batch_size,
+-    #                              tgt_imdb.num_classes,
+-    #                              training=True)
+-    # tgt_data_loader = torch.utils.data.DataLoader(tgt_dataset,
+-    #                                               batch_size=args.batch_size,
+-    #                                               sampler=tgt_sampler_batch,
+-    #                                               num_workers=args.num_workers)
++    tgt_imdb, tgt_roidb, tgt_ratio_list, tgt_ratio_index, _ = combined_roidb(
++        args.tgt_imdb_name)
++    tgt_train_size = len(tgt_roidb)
++    tgt_sampler_batch = sampler(tgt_train_size, args.batch_size)
++    tgt_dataset = roibatchLoader(tgt_roidb,
++                                 tgt_ratio_list,
++                                 tgt_ratio_index,
++                                 args.batch_size,
++                                 tgt_imdb.num_classes,
++                                 training=True,
++                                 domain=1)
++    tgt_dataloader = torch.utils.data.DataLoader(tgt_dataset,
++                                                 batch_size=args.batch_size,
++                                                 sampler=tgt_sampler_batch,
++                                                 num_workers=args.num_workers,
++                                                 drop_last=True,
++                                                 pin_memory=True)
+ 
+     # initilize the tensor holder here.
+     im_data = torch.FloatTensor(1)
+@@ -485,57 +542,84 @@ if __name__ == '__main__':
+     iters_per_epoch = int(train_size / args.batch_size)
+ 
+     if args.caption_for_da:
++        dann = Discriminator(DANN(2))
++        dann_optimizer = torch.optim.SGD(dann.parameters(),
++                                         args.lr,
++                                         momentum=cfg.TRAIN.MOMENTUM,
++                                         nesterov=True,
++                                         weight_decay=args.weight_decay)
++        if args.cuda:
++            dann.cuda()
+         if args.use_glove:
+             glove_vectors = pickle.load(open('glove.6B/glove_words.pkl', 'rb'))
+             glove_vectors = torch.FloatTensor(glove_vectors)
+             args.embed_dim = 300
+             print('use glove embedding')
+-        lstm_decoder = DecoderWithAttention(attention_dim=args.attention_dim,
+-                                            embed_dim=args.embed_dim,
+-                                            decoder_dim=args.decoder_dim,
+-                                            vocab_size=len(vocab.idx2word),
+-                                            dropout=args.dropout,
+-                                            args=args)
+-        lstm_decoder.load_pretrained_embeddings(glove_vectors)
+-        lstm_decoder.fine_tune_embeddings(True)
++        lstm = DecoderWithAttention(attention_dim=args.attention_dim,
++                                    embed_dim=args.embed_dim,
++                                    decoder_dim=args.decoder_dim,
++                                    vocab_size=len(vocab.idx2word),
++                                    dropout=args.dropout,
++                                    args=args)
++        lstm.load_pretrained_embeddings(glove_vectors)
++        lstm.fine_tune_embeddings(True)
+         lstm_optimizer = torch.optim.Adam(params=filter(
+-            lambda p: p.requires_grad, lstm_decoder.parameters()),
++            lambda p: p.requires_grad, lstm.parameters()),
+                                           lr=args.lstm_lr)
+         lstm_criterion = nn.CrossEntropyLoss()
++        dann_criterion = nn.CrossEntropyLoss()
+ 
+         if args.cuda:
+-            lstm_decoder.cuda()
++            lstm.cuda()
+ 
+         # train and validate the captioning model
+-        val_imdb, val_roidb, val_ratio_list, val_ratio_index, _ = combined_roidb(
+-            args.imdbval_name)
+-        val_size = len(val_roidb)
+-
+-        val_sampler_batch = sampler(val_size, 1)
+-
+-        val_dataset = roibatchLoader(val_roidb, val_ratio_list, val_ratio_index, 1, \
+-                                val_imdb.num_classes, training=True)
+-
+-        val_dataloader = torch.utils.data.DataLoader(
+-            val_dataset,
+-            batch_size=1,
+-            sampler=val_sampler_batch,
+-            num_workers=args.num_workers,
+-            drop_last=True)
++        if args.cap_pretraining:
++            val_imdb, val_roidb, val_ratio_list, val_ratio_index, _ = combined_roidb(
++                args.imdbval_name)
++
++            val_dataset = roibatchLoader(val_roidb,
++                                         val_ratio_list,
++                                         val_ratio_index,
++                                         1,
++                                         val_imdb.num_classes,
++                                         training=False,
++                                         normalize=False)
++
++            val_dataloader = torch.utils.data.DataLoader(
++                val_dataset,
++                batch_size=1,
++                num_workers=args.num_workers,
++                pin_memory=True,
++                drop_last=True)
+         args.vocab = vocab
++        cap_iter_num = 0
++        if args.cap_resume:
++            load_name = os.path.join(
++                args.output_dir,
++                'cap_lstm_{}_{}_{}.pth'.format(args.checksession,
++                                               args.checkepoch,
++                                               args.checkpoint))
++            print("loading checkpoint %s" % (load_name))
++            checkpoint = torch.load(load_name)
++            args.session = checkpoint['session']
++            args.start_epoch = checkpoint['epoch']
++            cap_iter_num = checkpoint['iter_num']
++            lstm.load_state_dict(checkpoint['model'])
++            lstm_optimizer.load_state_dict(checkpoint['optimizer'])
++            lr = lstm_optimizer.param_groups[0]['lr']
++
++            print("loaded checkpoint %s" % (load_name))
++        if args.cap_pretraining:
++            caption_main(args, dataloader,
++                         val_dataloader, lstm_criterion, fasterRCNN,
++                         copy.deepcopy(optimizer), lstm, lstm_optimizer,
++                         cap_iter_num)
++        else:
++            fine_tune(lstm, freeze=True)
++            fine_tune(fasterRCNN.RCNN_base, freeze=False)
+ 
+-        caption_main(
+-            args,
+-            dataloader,
+-            val_dataloader,
+-            lstm_criterion,
+-            fasterRCNN.module if args.mGPUs else fasterRCNN,
+-            copy.deepcopy(optimizer),
+-            lstm_decoder,
+-            lstm_optimizer,
+-        )
+-        exit(0)
+-
++    iter_num = 0
++    args.start_epoch = 0
+     has_adjusted_lr = False
+     for epoch in range(args.start_epoch, args.max_epochs + 1):
+         if iter_num >= args.max_iter:
+@@ -545,37 +629,78 @@ if __name__ == '__main__':
+         # setting to train mode
+         fasterRCNN.train()
+         loss_temp = 0
++        dann_loss_temp = 0
+         start = time.time()
+ 
+         data_iter = iter(dataloader)
++        tgt_data_iter = iter(tgt_dataloader)
+         for step in range(iters_per_epoch):
+             if iter_num >= args.max_iter:
+                 break
+             iter_num += 1
+-            if iter_num == args.lr_decay_iter and not has_adjusted_lr:
++            p = iter_num / args.max_iter
++            if args.caption_for_da:
++                dann_suppression = (2.0 /
++                                    (1. + np.exp(-args.decay_schedule * p)) -
++                                    1)
++                beta = 1 * args.dann_weight
++                beta *= dann_suppression
++                dann.set_beta(beta)
++            if iter_num >= (args.max_iter * 0.75) and not has_adjusted_lr:
+                 adjust_learning_rate(optimizer, args.lr_decay_gamma)
++                if args.caption_for_da:
++                    adjust_learning_rate(dann_optimizer, args.lr_decay_gamma)
+                 lr *= args.lr_decay_gamma
+                 has_adjusted_lr = True
+ 
+             data = next(data_iter)
++            if args.caption_for_da:
++                try:
++                    tgt_data = next(tgt_data_iter)
++                except StopIteration:
++                    tgt_data_iter = iter(tgt_dataloader)
++                    tgt_data = next(tgt_data_iter)
+             with torch.no_grad():
+                 im_data.resize_(data[0].size()).copy_(data[0])
+                 im_info.resize_(data[1].size()).copy_(data[1])
+                 gt_boxes.resize_(data[2].size()).copy_(data[2])
+                 num_boxes.resize_(data[3].size()).copy_(data[3])
+-                if args.dataset == "coco_pascal_voc":
+-                    caption = data[4].cuda()
+-                    caplen = data[5].cuda()
+-
++                if args.imdb_name == "coco_train":
++                    domain = data[6].cuda()
++                else:
++                    domain = data[4].cuda()
++                if args.caption_for_da:
++                    tgt_im_data = tgt_data[0].cuda()
++                    tgt_domain = tgt_data[4].cuda()
+             fasterRCNN.zero_grad()
+             rois, cls_prob, bbox_pred, \
+             rpn_loss_cls, rpn_loss_box, \
+             RCNN_loss_cls, RCNN_loss_bbox, \
+-            rois_label = fasterRCNN(im_data, im_info, gt_boxes, num_boxes)
++            rois_label, base_feat = fasterRCNN(im_data, im_info, gt_boxes, num_boxes)
++            if args.caption_for_da:
++                tgt_base_feat = fasterRCNN.RCNN_base(tgt_im_data)
++                _, _, pred, cap_h_pred, cap_c_pred = lstm.greedy_search(
++                    base_feat)
++                _, _, tgt_pred, tgt_cap_h_pred, tgt_cap_c_pred = lstm.greedy_search(
++                    tgt_base_feat)
++
++                cap_pred = torch.cat([cap_h_pred, cap_c_pred], dim=2)
++                tgt_cap_pred = torch.cat([tgt_cap_h_pred, tgt_cap_c_pred],
++                                         dim=2)
++                cap_dann_pred = dann(cap_pred)
++                tgt_cap_dann_pred = dann(tgt_cap_pred)
++                cap_dann_loss = dann_criterion(cap_dann_pred, domain)
++                tgt_cap_dann_loss = dann_criterion(tgt_cap_dann_pred,
++                                                   tgt_domain)
++                dann_loss = cap_dann_loss.mean() + tgt_cap_dann_loss.mean()
++
+ 
+             loss = rpn_loss_cls.mean() + rpn_loss_box.mean() \
+                  + RCNN_loss_cls.mean() + RCNN_loss_bbox.mean()
+             loss_temp += loss.item()
++            if args.caption_for_da:
++                loss += dann_loss
++                dann_loss_temp += dann_loss.item()
+ 
+             # backward
+             optimizer.zero_grad()
+@@ -583,12 +708,16 @@ if __name__ == '__main__':
+             if args.net == "vgg16":
+                 clip_gradient(fasterRCNN, 10.)
+             optimizer.step()
+-
++            if args.caption_for_da:
++                clip_gradient(dann, 5.)
++                dann_optimizer.zero_grad()
++                dann_optimizer.step()
+             if step % args.disp_interval == 0:
+                 end = time.time()
+                 if step > 0:
+                     loss_temp /= (args.disp_interval + 1)
+-
++                    if args.caption_for_da:
++                        dann_loss_temp /= (args.disp_interval + 1)
+                 if args.mGPUs:
+                     loss_rpn_cls = rpn_loss_cls.mean().item()
+                     loss_rpn_box = rpn_loss_box.mean().item()
+@@ -605,8 +734,8 @@ if __name__ == '__main__':
+                     bg_cnt = rois_label.data.numel() - fg_cnt
+ 
+ 
+-                print("[session %d][epoch %2d][iter %4d/%4d] loss: %.4f, lr: %.2e" \
+-                                        % (args.session, epoch, step, iters_per_epoch, loss_temp, lr))
++                print("[session %d][epoch %2d][iter %4d/%4d] loss: %.4f, dann_loss: %.4f, lr: %.2e" \
++                                        % (args.session, epoch, step, iters_per_epoch, loss_temp, dann_loss_temp if args.caption_for_da else 0, lr))
+                 print("\t\t\tfg/bg=(%d/%d), time cost: %f" %
+                       (fg_cnt, bg_cnt, end - start))
+                 print("\t\t\trpn_cls: %.4f, rpn_box: %.4f, rcnn_cls: %.4f, rcnn_box %.4f" \
+@@ -622,12 +751,30 @@ if __name__ == '__main__':
+                     logger.add_scalars("logs_s_{}/losses".format(args.session),
+                                        info,
+                                        (epoch - 1) * iters_per_epoch + step)
++                if args.wandb is not None:
++                    wandb.log({
++                        'fr_loss':
++                        loss_temp,
++                        'fr_loss_rpn_cls':
++                        loss_rpn_cls,
++                        'fr_loss_rpn_box':
++                        loss_rpn_box,
++                        'fr_loss_rcnn_cls':
++                        loss_rcnn_cls,
++                        'fr_loss_rcnn_box':
++                        loss_rcnn_box,
++                        'fr_loss_dann':
++                        dann_loss_temp if args.caption_for_da else None,
++                        'dann_suppression':
++                        dann_suppression if args.caption_for_da else None
++                    })
+ 
+                 loss_temp = 0
+                 start = time.time()
+         save_name = os.path.join(
+             output_dir,
+-            'cap_faster_rcnn_{}_{}_{}.pth'.format(args.session, epoch, step))
++            'cap_faster_rcnn_{}_{}_{}.pth'.format(args.session, epoch,
++                                                  iter_num))
+         save_checkpoint(
+             {
+                 'session':

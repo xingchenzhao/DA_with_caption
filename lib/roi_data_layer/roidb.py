@@ -133,5 +133,8 @@ def combined_roidb(imdb_names, training=True):
         roidb = filter_roidb(roidb)
 
     ratio_list, ratio_index = rank_roidb_ratio(roidb)
-
-    return imdb, roidb, ratio_list, ratio_index, imdb._vocab if 'coco' in imdb.name else None
+    try:
+        vocab = imdb._vocab
+    except:
+        vocab = None
+    return imdb, roidb, ratio_list, ratio_index, vocab

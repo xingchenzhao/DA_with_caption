@@ -1,0 +1,1 @@
+{"fr_loss": 1.2115088577317719, "fr_loss_rpn_cls": 0.159506157040596, "fr_loss_rpn_box": 0.039256270974874496, "fr_loss_rcnn_cls": 0.5373672842979431, "fr_loss_rcnn_box": 0.3024490773677826, "fr_loss_dann": 1.3847079013920687, "dann_suppression": 1, "_runtime": 4519, "_timestamp": 1622914473, "_step": 16}

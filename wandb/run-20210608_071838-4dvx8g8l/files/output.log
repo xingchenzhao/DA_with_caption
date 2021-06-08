@@ -1,0 +1,165 @@
+Using config:
+{'ANCHOR_RATIOS': [0.5, 1, 2],
+ 'ANCHOR_SCALES': [4, 8, 16, 32],
+ 'CROP_RESIZE_WITH_MAX_POOL': False,
+ 'CUDA': False,
+ 'DATA_DIR': '/own_files/lanyi/objDet/data',
+ 'DEDUP_BOXES': 0.0625,
+ 'EPS': 1e-14,
+ 'EXP_DIR': 'vgg16',
+ 'FEAT_STRIDE': [16],
+ 'GPU_ID': 0,
+ 'MATLAB': 'matlab',
+ 'MAX_NUM_GT_BOXES': 50,
+ 'MOBILENET': {'DEPTH_MULTIPLIER': 1.0,
+               'FIXED_LAYERS': 5,
+               'REGU_DEPTH': False,
+               'WEIGHT_DECAY': 4e-05},
+ 'PIXEL_MEANS': array([[[102.9801, 115.9465, 122.7717]]]),
+ 'POOLING_MODE': 'align',
+ 'POOLING_SIZE': 7,
+ 'RESNET': {'FIXED_BLOCKS': 1, 'MAX_POOL': False},
+ 'RNG_SEED': 3,
+ 'ROOT_DIR': '/own_files/lanyi/objDet',
+ 'TEST': {'BBOX_REG': True,
+          'HAS_RPN': True,
+          'MAX_SIZE': 1000,
+          'MODE': 'nms',
+          'NMS': 0.3,
+          'PROPOSAL_METHOD': 'gt',
+          'RPN_MIN_SIZE': 16,
+          'RPN_NMS_THRESH': 0.7,
+          'RPN_POST_NMS_TOP_N': 300,
+          'RPN_PRE_NMS_TOP_N': 6000,
+          'RPN_TOP_N': 5000,
+          'SCALES': [600],
+          'SVM': False},
+ 'TRAIN': {'ASPECT_GROUPING': False,
+           'BATCH_SIZE': 256,
+           'BBOX_INSIDE_WEIGHTS': [1.0, 1.0, 1.0, 1.0],
+           'BBOX_NORMALIZE_MEANS': [0.0, 0.0, 0.0, 0.0],
+           'BBOX_NORMALIZE_STDS': [0.1, 0.1, 0.2, 0.2],
+           'BBOX_NORMALIZE_TARGETS': True,
+           'BBOX_NORMALIZE_TARGETS_PRECOMPUTED': True,
+           'BBOX_REG': True,
+           'BBOX_THRESH': 0.5,
+           'BG_THRESH_HI': 0.5,
+           'BG_THRESH_LO': 0.0,
+           'BIAS_DECAY': False,
+           'BN_TRAIN': False,
+           'DISPLAY': 10,
+           'DOUBLE_BIAS': True,
+           'FG_FRACTION': 0.25,
+           'FG_THRESH': 0.5,
+           'GAMMA': 0.1,
+           'HAS_RPN': True,
+           'IMS_PER_BATCH': 1,
+           'LEARNING_RATE': 0.01,
+           'MAX_SIZE': 1000,
+           'MOMENTUM': 0.9,
+           'PROPOSAL_METHOD': 'gt',
+           'RPN_BATCHSIZE': 256,
+           'RPN_BBOX_INSIDE_WEIGHTS': [1.0, 1.0, 1.0, 1.0],
+           'RPN_CLOBBER_POSITIVES': False,
+           'RPN_FG_FRACTION': 0.5,
+           'RPN_MIN_SIZE': 8,
+           'RPN_NEGATIVE_OVERLAP': 0.3,
+           'RPN_NMS_THRESH': 0.7,
+           'RPN_POSITIVE_OVERLAP': 0.7,
+           'RPN_POSITIVE_WEIGHT': -1.0,
+           'RPN_POST_NMS_TOP_N': 2000,
+           'RPN_PRE_NMS_TOP_N': 12000,
+           'SCALES': [600],
+           'SNAPSHOT_ITERS': 5000,
+           'SNAPSHOT_KEPT': 3,
+           'SNAPSHOT_PREFIX': 'res101_faster_rcnn',
+           'STEPSIZE': [30000],
+           'SUMMARY_INTERVAL': 180,
+           'TRIM_HEIGHT': 600,
+           'TRIM_WIDTH': 600,
+           'TRUNCATED': False,
+           'USE_ALL_GT': True,
+           'USE_FLIPPED': True,
+           'USE_GT': False,
+           'WEIGHT_DECAY': 0.0005},
+ 'USE_GPU_NMS': True}
+loading annotations into memory...
+Done (t=4.42s)
+creating index...
+index created!
+Loaded dataset `coco_2014_valminusminival` for training
+Set proposal method: gt
+Appending horizontally-flipped training examples...
+coco_2014_valminusminival gt roidb loaded from /own_files/lanyi/objDet/data/cache/coco_2014_valminusminival_gt_roidb.pkl
+done
+Preparing training data...
+done
+loading annotations into memory...
+Done (t=5.18s)
+creating index...
+index created!
+before filtering, there are 71008 images...
+after filtering, there are 70370 images...
+loading annotations into memory...
+Done (t=11.36s)
+creating index...
+index created!
+loading annotations into memory...
+Done (t=0.69s)
+creating index...
+index created!
+Loaded dataset `coco_2014_train` for training
+Set proposal method: gt
+Appending horizontally-flipped training examples...
+coco_2014_train gt roidb loaded from /own_files/lanyi/objDet/data/cache/coco_2014_train_gt_roidb.pkl
+done
+Preparing training data...
+done
+loading annotations into memory...
+Done (t=14.12s)
+creating index...
+index created!
+loading annotations into memory...
+Done (t=0.69s)
+creating index...
+index created!
+before filtering, there are 165566 images...
+after filtering, there are 164162 images...
+70370 roidb entries
+Loaded dataset `clipart1k_train` for training
+Set proposal method: gt
+Appending horizontally-flipped training examples...
+clipart1k_train gt roidb loaded from /own_files/lanyi/objDet/data/cache/clipart1k_train_gt_roidb.pkl
+done
+Preparing training data...
+done
+before filtering, there are 1000 images...
+after filtering, there are 1000 images...
+Loading pretrained weights from data/pretrained_model/vgg16_caffe.pth
+loading checkpoint results/vgg16/caption_model_decay10_dw1/cap_faster_rcnn_1_9_164160.pth
+loaded checkpoint results/vgg16/caption_model_decay10_dw1/cap_faster_rcnn_1_9_164160.pth
+use glove embedding
+loading checkpoint results/vgg16/caption_model_decay10_dw1/cap_lstm_1_9_164160.pth
+loaded checkpoint results/vgg16/caption_model_decay10_dw1/cap_lstm_1_9_164160.pth
+Traceback (most recent call last):
+  File "trainval_cap_net.py", line 690, in <module>
+    cap_dann_pred = dann(cap_h_pred)
+  File "/afs/cs.pitt.edu/usr0/law190/anaconda3/lib/python3.8/site-packages/torch/nn/modules/module.py", line 532, in __call__
+    result = self.forward(*input, **kwargs)
+  File "/own_files/lanyi/objDet/lib/model/discriminator/dann.py", line 64, in forward
+    x = self.head(x)
+  File "/afs/cs.pitt.edu/usr0/law190/anaconda3/lib/python3.8/site-packages/torch/nn/modules/module.py", line 532, in __call__
+    result = self.forward(*input, **kwargs)
+  File "/own_files/lanyi/objDet/lib/model/discriminator/dann.py", line 26, in forward
+    return self.layers(x)
+  File "/afs/cs.pitt.edu/usr0/law190/anaconda3/lib/python3.8/site-packages/torch/nn/modules/module.py", line 532, in __call__
+    result = self.forward(*input, **kwargs)
+  File "/afs/cs.pitt.edu/usr0/law190/anaconda3/lib/python3.8/site-packages/torch/nn/modules/container.py", line 100, in forward
+    input = module(input)
+  File "/afs/cs.pitt.edu/usr0/law190/anaconda3/lib/python3.8/site-packages/torch/nn/modules/module.py", line 532, in __call__
+    result = self.forward(*input, **kwargs)
+  File "/afs/cs.pitt.edu/usr0/law190/anaconda3/lib/python3.8/site-packages/torch/nn/modules/linear.py", line 87, in forward
+    return F.linear(input, self.weight, self.bias)
+  File "/afs/cs.pitt.edu/usr0/law190/anaconda3/lib/python3.8/site-packages/torch/nn/functional.py", line 1370, in linear
+    ret = torch.addmm(bias, input, weight.t())
+RuntimeError: size mismatch, m1: [12 x 1280], m2: [1024 x 512] at /opt/conda/conda-bld/pytorch_1579061855666/work/aten/src/THC/generic/THCTensorMathBlas.cu:290

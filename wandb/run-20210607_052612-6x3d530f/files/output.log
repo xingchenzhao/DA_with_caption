@@ -1,0 +1,360 @@
+Using config:
+{'ANCHOR_RATIOS': [0.5, 1, 2],
+ 'ANCHOR_SCALES': [4, 8, 16, 32],
+ 'CROP_RESIZE_WITH_MAX_POOL': False,
+ 'CUDA': False,
+ 'DATA_DIR': '/own_files/lanyi/objDet/data',
+ 'DEDUP_BOXES': 0.0625,
+ 'EPS': 1e-14,
+ 'EXP_DIR': 'vgg16',
+ 'FEAT_STRIDE': [16],
+ 'GPU_ID': 0,
+ 'MATLAB': 'matlab',
+ 'MAX_NUM_GT_BOXES': 50,
+ 'MOBILENET': {'DEPTH_MULTIPLIER': 1.0,
+               'FIXED_LAYERS': 5,
+               'REGU_DEPTH': False,
+               'WEIGHT_DECAY': 4e-05},
+ 'PIXEL_MEANS': array([[[102.9801, 115.9465, 122.7717]]]),
+ 'POOLING_MODE': 'align',
+ 'POOLING_SIZE': 7,
+ 'RESNET': {'FIXED_BLOCKS': 1, 'MAX_POOL': False},
+ 'RNG_SEED': 3,
+ 'ROOT_DIR': '/own_files/lanyi/objDet',
+ 'TEST': {'BBOX_REG': True,
+          'HAS_RPN': True,
+          'MAX_SIZE': 1000,
+          'MODE': 'nms',
+          'NMS': 0.3,
+          'PROPOSAL_METHOD': 'gt',
+          'RPN_MIN_SIZE': 16,
+          'RPN_NMS_THRESH': 0.7,
+          'RPN_POST_NMS_TOP_N': 300,
+          'RPN_PRE_NMS_TOP_N': 6000,
+          'RPN_TOP_N': 5000,
+          'SCALES': [600],
+          'SVM': False},
+ 'TRAIN': {'ASPECT_GROUPING': False,
+           'BATCH_SIZE': 256,
+           'BBOX_INSIDE_WEIGHTS': [1.0, 1.0, 1.0, 1.0],
+           'BBOX_NORMALIZE_MEANS': [0.0, 0.0, 0.0, 0.0],
+           'BBOX_NORMALIZE_STDS': [0.1, 0.1, 0.2, 0.2],
+           'BBOX_NORMALIZE_TARGETS': True,
+           'BBOX_NORMALIZE_TARGETS_PRECOMPUTED': True,
+           'BBOX_REG': True,
+           'BBOX_THRESH': 0.5,
+           'BG_THRESH_HI': 0.5,
+           'BG_THRESH_LO': 0.0,
+           'BIAS_DECAY': False,
+           'BN_TRAIN': False,
+           'DISPLAY': 10,
+           'DOUBLE_BIAS': True,
+           'FG_FRACTION': 0.25,
+           'FG_THRESH': 0.5,
+           'GAMMA': 0.1,
+           'HAS_RPN': True,
+           'IMS_PER_BATCH': 1,
+           'LEARNING_RATE': 0.01,
+           'MAX_SIZE': 1000,
+           'MOMENTUM': 0.9,
+           'PROPOSAL_METHOD': 'gt',
+           'RPN_BATCHSIZE': 256,
+           'RPN_BBOX_INSIDE_WEIGHTS': [1.0, 1.0, 1.0, 1.0],
+           'RPN_CLOBBER_POSITIVES': False,
+           'RPN_FG_FRACTION': 0.5,
+           'RPN_MIN_SIZE': 8,
+           'RPN_NEGATIVE_OVERLAP': 0.3,
+           'RPN_NMS_THRESH': 0.7,
+           'RPN_POSITIVE_OVERLAP': 0.7,
+           'RPN_POSITIVE_WEIGHT': -1.0,
+           'RPN_POST_NMS_TOP_N': 2000,
+           'RPN_PRE_NMS_TOP_N': 12000,
+           'SCALES': [600],
+           'SNAPSHOT_ITERS': 5000,
+           'SNAPSHOT_KEPT': 3,
+           'SNAPSHOT_PREFIX': 'res101_faster_rcnn',
+           'STEPSIZE': [30000],
+           'SUMMARY_INTERVAL': 180,
+           'TRIM_HEIGHT': 600,
+           'TRIM_WIDTH': 600,
+           'TRUNCATED': False,
+           'USE_ALL_GT': True,
+           'USE_FLIPPED': True,
+           'USE_GT': False,
+           'WEIGHT_DECAY': 0.0005},
+ 'USE_GPU_NMS': True}
+loading annotations into memory...
+Done (t=4.60s)
+creating index...
+index created!
+Loaded dataset `coco_2014_valminusminival` for training
+Set proposal method: gt
+Appending horizontally-flipped training examples...
+coco_2014_valminusminival gt roidb loaded from /own_files/lanyi/objDet/data/cache/coco_2014_valminusminival_gt_roidb.pkl
+done
+Preparing training data...
+done
+loading annotations into memory...
+Done (t=5.39s)
+creating index...
+index created!
+before filtering, there are 71008 images...
+after filtering, there are 70370 images...
+loading annotations into memory...
+Done (t=11.93s)
+creating index...
+index created!
+loading annotations into memory...
+Done (t=0.75s)
+creating index...
+index created!
+Loaded dataset `coco_2014_train` for training
+Set proposal method: gt
+Appending horizontally-flipped training examples...
+coco_2014_train gt roidb loaded from /own_files/lanyi/objDet/data/cache/coco_2014_train_gt_roidb.pkl
+done
+Preparing training data...
+done
+loading annotations into memory...
+Done (t=14.59s)
+creating index...
+index created!
+loading annotations into memory...
+Done (t=0.74s)
+creating index...
+index created!
+before filtering, there are 165566 images...
+after filtering, there are 164162 images...
+70370 roidb entries
+Loaded dataset `clipart1k_train` for training
+Set proposal method: gt
+Appending horizontally-flipped training examples...
+clipart1k_train gt roidb loaded from /own_files/lanyi/objDet/data/cache/clipart1k_train_gt_roidb.pkl
+done
+Preparing training data...
+done
+before filtering, there are 1000 images...
+after filtering, there are 1000 images...
+Loading pretrained weights from data/pretrained_model/vgg16_caffe.pth
+loading checkpoint results/vgg16/caption_model_decay10_dw1/cap_faster_rcnn_1_9_164160.pth
+loaded checkpoint results/vgg16/caption_model_decay10_dw1/cap_faster_rcnn_1_9_164160.pth
+use glove embedding
+loading checkpoint results/vgg16/caption_model_decay10_dw1/cap_lstm_1_9_164160.pth
+loaded checkpoint results/vgg16/caption_model_decay10_dw1/cap_lstm_1_9_164160.pth
+[session 1][epoch  0][iter    0/5864] loss: 6.4939, dann_loss: 1.6711, lr: 4.00e-05
+			fg/bg=(352/2720), time cost: 5.642209
+			rpn_cls: 0.7812, rpn_box: 0.3177, rcnn_cls: 5.1327, rcnn_box 0.2623
+[session 1][epoch  0][iter  100/5864] loss: 2.7754, dann_loss: 1.5758, lr: 4.00e-05
+			fg/bg=(378/2694), time cost: 263.718049
+			rpn_cls: 0.5705, rpn_box: 0.3501, rcnn_cls: 0.8634, rcnn_box 0.2312
+[session 1][epoch  0][iter  200/5864] loss: 1.8291, dann_loss: 1.5128, lr: 4.00e-05
+			fg/bg=(444/2628), time cost: 263.756585
+			rpn_cls: 0.3956, rpn_box: 0.1694, rcnn_cls: 0.9089, rcnn_box 0.3555
+[session 1][epoch  0][iter  300/5864] loss: 1.7490, dann_loss: 1.8380, lr: 4.00e-05
+			fg/bg=(378/2694), time cost: 263.939639
+			rpn_cls: 0.2621, rpn_box: 0.1489, rcnn_cls: 0.7017, rcnn_box 0.3130
+[session 1][epoch  0][iter  400/5864] loss: 5.9347, dann_loss: 125.5988, lr: 4.00e-05
+			fg/bg=(246/2826), time cost: 263.204014
+			rpn_cls: 10.8007, rpn_box: 6.4982, rcnn_cls: 6.3756, rcnn_box 0.4742
+[session 1][epoch  0][iter  500/5864] loss: 37.6403, dann_loss: 1800.2244, lr: 4.00e-05
+			fg/bg=(106/2966), time cost: 260.437588
+			rpn_cls: 26.5690, rpn_box: 11.2919, rcnn_cls: 15.7745, rcnn_box 0.9400
+[session 1][epoch  0][iter  600/5864] loss: 207.2968, dann_loss: 19902.2017, lr: 4.00e-05
+			fg/bg=(104/2968), time cost: 261.148149
+			rpn_cls: 171.3882, rpn_box: 793.7023, rcnn_cls: 135.8956, rcnn_box 9.4386
+[session 1][epoch  0][iter  700/5864] loss: 1383.5110, dann_loss: 214353.7518, lr: 4.00e-05
+			fg/bg=(106/2966), time cost: 260.843791
+			rpn_cls: 569.2727, rpn_box: 2223.0679, rcnn_cls: 894.8748, rcnn_box 66.5864
+[session 1][epoch  0][iter  800/5864] loss: 8592.3263, dann_loss: 1557302.3193, lr: 4.00e-05
+			fg/bg=(86/2986), time cost: 267.736921
+			rpn_cls: 4645.3218, rpn_box: 9008.4121, rcnn_cls: 2199.6038, rcnn_box 168.6886
+[session 1][epoch  0][iter  900/5864] loss: 40974.2311, dann_loss: 7913545.0205, lr: 4.00e-05
+			fg/bg=(131/2941), time cost: 266.424109
+			rpn_cls: 20933.5879, rpn_box: 56536.8672, rcnn_cls: 12618.6592, rcnn_box 1067.7686
+[session 1][epoch  0][iter 1000/5864] loss: 138695.2125, dann_loss: 32613134.3566, lr: 4.00e-05
+			fg/bg=(50/3022), time cost: 266.653566
+			rpn_cls: 51907.5898, rpn_box: 144454.7031, rcnn_cls: 12120.9297, rcnn_box 917.0361
+[session 1][epoch  0][iter 1100/5864] loss: 443494.4528, dann_loss: 116209606.5382, lr: 4.00e-05
+			fg/bg=(128/2944), time cost: 268.956455
+			rpn_cls: 153042.4531, rpn_box: 396190.3438, rcnn_cls: 73416.3516, rcnn_box 6433.0029
+[session 1][epoch  0][iter 1200/5864] loss: 1215185.4298, dann_loss: 339824042.2826, lr: 4.00e-05
+			fg/bg=(138/2934), time cost: 261.790259
+			rpn_cls: 657039.4375, rpn_box: 2199957.5000, rcnn_cls: 143473.2500, rcnn_box 12570.5371
+[session 1][epoch  0][iter 1300/5864] loss: 2974594.6126, dann_loss: 808616850.9533, lr: 4.00e-05
+			fg/bg=(76/2996), time cost: 267.170091
+			rpn_cls: 1231547.1250, rpn_box: 4462167.5000, rcnn_cls: 183822.2969, rcnn_box 14768.6250
+[session 1][epoch  0][iter 1400/5864] loss: 6693904.8775, dann_loss: 1764391203.6728, lr: 4.00e-05
+			fg/bg=(151/2921), time cost: 261.868737
+			rpn_cls: 2840369.0000, rpn_box: 5904693.0000, rcnn_cls: 303444.7188, rcnn_box 23583.7793
+[session 1][epoch  0][iter 1500/5864] loss: 11563500.5149, dann_loss: 3850476909.9770, lr: 4.00e-05
+			fg/bg=(72/3000), time cost: 268.926595
+			rpn_cls: 4693083.0000, rpn_box: 11121334.0000, rcnn_cls: 551193.4375, rcnn_box 33491.1484
+[session 1][epoch  0][iter 1600/5864] loss: 26653846.5248, dann_loss: 7049517112.8513, lr: 4.00e-05
+			fg/bg=(71/3001), time cost: 266.859506
+			rpn_cls: 8836055.0000, rpn_box: 18775804.0000, rcnn_cls: 178051.3750, rcnn_box 8092.4512
+[session 1][epoch  0][iter 1700/5864] loss: 39688921.8416, dann_loss: 13032575227.4936, lr: 4.00e-05
+			fg/bg=(71/3001), time cost: 263.958171
+			rpn_cls: 11116798.0000, rpn_box: 25716118.0000, rcnn_cls: 893506.8125, rcnn_box 30333.7812
+[session 1][epoch  0][iter 1800/5864] loss: 65892667.1881, dann_loss: 24394087862.4504, lr: 4.00e-05
+			fg/bg=(74/2998), time cost: 269.299080
+			rpn_cls: 13944591.0000, rpn_box: 74586992.0000, rcnn_cls: 1214250.6250, rcnn_box 64607.9336
+[session 1][epoch  0][iter 1900/5864] loss: 121702597.4257, dann_loss: 42341873364.1827, lr: 4.00e-05
+			fg/bg=(99/2973), time cost: 266.058982
+			rpn_cls: 23437014.0000, rpn_box: 57405472.0000, rcnn_cls: 2831339.0000, rcnn_box 169797.1562
+[session 1][epoch  0][iter 2000/5864] loss: 198669272.1584, dann_loss: 64869972167.8038, lr: 4.00e-05
+			fg/bg=(104/2968), time cost: 266.309042
+			rpn_cls: 92872120.0000, rpn_box: 221365120.0000, rcnn_cls: 3079038.7500, rcnn_box 103228.1875
+[session 1][epoch  0][iter 2100/5864] loss: 292862961.7426, dann_loss: 108561895202.9288, lr: 4.00e-05
+			fg/bg=(79/2993), time cost: 262.324517
+			rpn_cls: 87950488.0000, rpn_box: 250156288.0000, rcnn_cls: 2342495.2500, rcnn_box 142156.7031
+[session 1][epoch  0][iter 2200/5864] loss: 440966748.1980, dann_loss: 164612063838.1280, lr: 4.00e-05
+			fg/bg=(57/3015), time cost: 268.310850
+			rpn_cls: 87746624.0000, rpn_box: 211596976.0000, rcnn_cls: 613087.9375, rcnn_box 47816.5469
+[session 1][epoch  0][iter 2300/5864] loss: 625237669.0693, dann_loss: 253765145190.3181, lr: 4.00e-05
+			fg/bg=(68/3004), time cost: 265.321913
+			rpn_cls: 353443456.0000, rpn_box: 554307712.0000, rcnn_cls: 6173932.5000, rcnn_box 158678.5938
+[session 1][epoch  0][iter 2400/5864] loss: 948667596.3564, dann_loss: 365502478321.8052, lr: 4.00e-05
+			fg/bg=(53/3019), time cost: 263.273141
+			rpn_cls: 124038456.0000, rpn_box: 567133824.0000, rcnn_cls: 920010.5625, rcnn_box 49001.6211
+[session 1][epoch  0][iter 2500/5864] loss: 1516401958.6535, dann_loss: 552533338720.1763, lr: 4.00e-05
+			fg/bg=(40/3032), time cost: 267.319642
+			rpn_cls: 430085920.0000, rpn_box: 919434944.0000, rcnn_cls: 2305197.2500, rcnn_box 70307.4297
+[session 1][epoch  0][iter 2600/5864] loss: 1787019760.1584, dann_loss: 785308743564.3582, lr: 4.00e-05
+			fg/bg=(115/2957), time cost: 266.616723
+			rpn_cls: 622502528.0000, rpn_box: 1295059328.0000, rcnn_cls: 498896.0938, rcnn_box 60597.9180
+[session 1][epoch  0][iter 2700/5864] loss: 2418855067.8812, dann_loss: 1195942040138.8945, lr: 4.00e-05
+			fg/bg=(80/2992), time cost: 263.789995
+			rpn_cls: 691539712.0000, rpn_box: 1517747456.0000, rcnn_cls: 819589.6875, rcnn_box 31898.8477
+[session 1][epoch  0][iter 2800/5864] loss: 3177405640.2376, dann_loss: 1618852807189.0186, lr: 4.00e-05
+			fg/bg=(85/2987), time cost: 263.391551
+			rpn_cls: 637829824.0000, rpn_box: 2015701504.0000, rcnn_cls: 121503584.0000, rcnn_box 11573638.0000
+[session 1][epoch  0][iter 2900/5864] loss: 2935931530.2970, dann_loss: 2398532117377.4751, lr: 4.00e-05
+			fg/bg=(288/2784), time cost: 266.127648
+			rpn_cls: 136708128.0000, rpn_box: 261084976.0000, rcnn_cls: 8646759.0000, rcnn_box 284926.2812
+[session 1][epoch  0][iter 3000/5864] loss: 273180131.6040, dann_loss: 4088101052749.3218, lr: 4.00e-05
+			fg/bg=(428/2644), time cost: 264.196931
+			rpn_cls: 68692136.0000, rpn_box: 65861948.0000, rcnn_cls: 45499712.0000, rcnn_box 3598629.0000
+[session 1][epoch  0][iter 3100/5864] loss: 246641578.7525, dann_loss: 7611490072112.9229, lr: 4.00e-05
+			fg/bg=(337/2735), time cost: 262.473611
+			rpn_cls: 155171088.0000, rpn_box: 369170656.0000, rcnn_cls: 338680544.0000, rcnn_box 16051372.0000
+[session 1][epoch  0][iter 3200/5864] loss: 370211641.1881, dann_loss: 13468436950569.0391, lr: 4.00e-05
+			fg/bg=(384/2688), time cost: 263.721587
+			rpn_cls: 20763124.0000, rpn_box: 34713592.0000, rcnn_cls: 54538940.0000, rcnn_box 5626355.0000
+[session 1][epoch  0][iter 3300/5864] loss: 508631625.9604, dann_loss: 23497904409564.9219, lr: 4.00e-05
+			fg/bg=(440/2632), time cost: 259.722642
+			rpn_cls: 29106056.0000, rpn_box: 64297036.0000, rcnn_cls: 49384628.0000, rcnn_box 2171168.2500
+[session 1][epoch  0][iter 3400/5864] loss: 786547180.2772, dann_loss: 37545504611814.3047, lr: 4.00e-05
+			fg/bg=(480/2592), time cost: 263.521861
+			rpn_cls: 47699956.0000, rpn_box: 146194352.0000, rcnn_cls: 30883560.0000, rcnn_box 787168.4375
+[session 1][epoch  0][iter 3500/5864] loss: 1545190629.4257, dann_loss: 62255194330096.5312, lr: 4.00e-05
+			fg/bg=(327/2745), time cost: 264.008418
+			rpn_cls: 365665376.0000, rpn_box: 388774528.0000, rcnn_cls: 2270842624.0000, rcnn_box 205534240.0000
+[session 1][epoch  0][iter 3600/5864] loss: 1514471062.2376, dann_loss: 99429561805154.6875, lr: 4.00e-05
+			fg/bg=(468/2604), time cost: 262.830345
+			rpn_cls: 196022448.0000, rpn_box: 217956080.0000, rcnn_cls: 34548920.0000, rcnn_box 1296548.0000
+[session 1][epoch  0][iter 3700/5864] loss: 2160241258.2574, dann_loss: 146939163070852.7812, lr: 4.00e-05
+			fg/bg=(416/2656), time cost: 261.278034
+			rpn_cls: 222540848.0000, rpn_box: 462496864.0000, rcnn_cls: 0.9921, rcnn_box 0.2973
+[session 1][epoch  0][iter 3800/5864] loss: 3015337012.0396, dann_loss: 215537108254926.6250, lr: 4.00e-05
+			fg/bg=(293/2779), time cost: 261.416034
+			rpn_cls: 317178176.0000, rpn_box: 1458570624.0000, rcnn_cls: 0.7574, rcnn_box 0.2133
+[session 1][epoch  0][iter 3900/5864] loss: 4595484926.8119, dann_loss: 302738481775567.3750, lr: 4.00e-05
+			fg/bg=(286/2786), time cost: 263.247067
+			rpn_cls: 1718045312.0000, rpn_box: 2803881728.0000, rcnn_cls: 0.7733, rcnn_box 0.2162
+[session 1][epoch  0][iter 4000/5864] loss: 4991830776.8515, dann_loss: 458690756129467.0625, lr: 4.00e-05
+			fg/bg=(389/2683), time cost: 262.673110
+			rpn_cls: 617031232.0000, rpn_box: 1249197312.0000, rcnn_cls: 0.8956, rcnn_box 0.2832
+[session 1][epoch  0][iter 4100/5864] loss: 6445659954.6139, dann_loss: 694180594719517.7500, lr: 4.00e-05
+			fg/bg=(416/2656), time cost: 262.868538
+			rpn_cls: 1397752064.0000, rpn_box: 1764696448.0000, rcnn_cls: 1362742912.0000, rcnn_box 108569720.0000
+[session 1][epoch  0][iter 4200/5864] loss: 14051403512.5545, dann_loss: 966169737852124.8750, lr: 4.00e-05
+			fg/bg=(407/2665), time cost: 262.474559
+			rpn_cls: 625212416.0000, rpn_box: 856188288.0000, rcnn_cls: 0.9637, rcnn_box 0.3345
+[session 1][epoch  0][iter 4300/5864] loss: 14646786261.5446, dann_loss: 1383457744886401.0000, lr: 4.00e-05
+			fg/bg=(261/2811), time cost: 261.762146
+			rpn_cls: 1702288000.0000, rpn_box: 11186875392.0000, rcnn_cls: 0.7257, rcnn_box 0.1294
+[session 1][epoch  0][iter 4400/5864] loss: 11978607338.2970, dann_loss: 1875994122656156.0000, lr: 4.00e-05
+			fg/bg=(509/2563), time cost: 262.589326
+			rpn_cls: 1028620288.0000, rpn_box: 718360448.0000, rcnn_cls: 1.1022, rcnn_box 0.4125
+[session 1][epoch  0][iter 4500/5864] loss: 20134590614.6535, dann_loss: 2530111163478770.5000, lr: 4.00e-05
+			fg/bg=(416/2656), time cost: 262.515806
+			rpn_cls: 1474676224.0000, rpn_box: 10435641344.0000, rcnn_cls: 1.0207, rcnn_box 0.2713
+[session 1][epoch  0][iter 4600/5864] loss: 38028834139.8812, dann_loss: 3224980493525851.0000, lr: 4.00e-05
+			fg/bg=(448/2624), time cost: 261.390676
+			rpn_cls: 4275912704.0000, rpn_box: 5954550784.0000, rcnn_cls: 12801137664.0000, rcnn_box 1694698880.0000
+[session 1][epoch  0][iter 4700/5864] loss: 34490194510.2743, dann_loss: 4580621723845347.0000, lr: 4.00e-05
+			fg/bg=(388/2684), time cost: 263.724726
+			rpn_cls: 738626048.0000, rpn_box: 0.1352, rcnn_cls: 267010179072.0000, rcnn_box 11165913088.0000
+[session 1][epoch  0][iter 4800/5864] loss: 28838293026.2178, dann_loss: 5981009073340586.0000, lr: 4.00e-05
+			fg/bg=(466/2606), time cost: 260.130167
+			rpn_cls: 1579783296.0000, rpn_box: 8469571.0000, rcnn_cls: 1.1089, rcnn_box 0.3690
+[session 1][epoch  0][iter 4900/5864] loss: 30792872348.8913, dann_loss: 7663712982663818.0000, lr: 4.00e-05
+			fg/bg=(308/2764), time cost: 262.504669
+			rpn_cls: 365854432.0000, rpn_box: 8540165632.0000, rcnn_cls: 2325175552.0000, rcnn_box 77537472.0000
+[session 1][epoch  0][iter 5000/5864] loss: 45520909662.1388, dann_loss: 9829624835145086.0000, lr: 4.00e-05
+			fg/bg=(440/2632), time cost: 264.237573
+			rpn_cls: 3641398016.0000, rpn_box: 3110309888.0000, rcnn_cls: 0.8975, rcnn_box 0.2985
+[session 1][epoch  0][iter 5100/5864] loss: 64542361825.1469, dann_loss: 13563634294149398.0000, lr: 4.00e-05
+			fg/bg=(270/2802), time cost: 259.999694
+			rpn_cls: 188933712.0000, rpn_box: 22153035776.0000, rcnn_cls: 2054899072.0000, rcnn_box 130886976.0000
+[session 1][epoch  0][iter 5200/5864] loss: 101382452865.5446, dann_loss: 16169144431109680.0000, lr: 4.00e-05
+			fg/bg=(283/2789), time cost: 265.110092
+			rpn_cls: 2317331200.0000, rpn_box: 0.1066, rcnn_cls: 0.8094, rcnn_box 0.2139
+[session 1][epoch  0][iter 5300/5864] loss: 103624425670.5247, dann_loss: 20796236954503000.0000, lr: 4.00e-06
+			fg/bg=(408/2664), time cost: 262.192385
+			rpn_cls: 22486771712.0000, rpn_box: 52038148096.0000, rcnn_cls: 75994439680.0000, rcnn_box 3666918912.0000
+[session 1][epoch  0][iter 5400/5864] loss: 65711138475.4259, dann_loss: 21559533755393076.0000, lr: 4.00e-06
+			fg/bg=(406/2666), time cost: 262.094369
+			rpn_cls: 5318164480.0000, rpn_box: 0.3725, rcnn_cls: 0.8859, rcnn_box 0.2384
+[session 1][epoch  0][iter 5500/5864] loss: 85805957092.7525, dann_loss: 22021123145517372.0000, lr: 4.00e-06
+			fg/bg=(420/2652), time cost: 262.335127
+			rpn_cls: 1376150272.0000, rpn_box: 405317184.0000, rcnn_cls: 182415310848.0000, rcnn_box 14492979200.0000
+[session 1][epoch  0][iter 5600/5864] loss: 66858813368.8713, dann_loss: 23032224823580876.0000, lr: 4.00e-06
+			fg/bg=(418/2654), time cost: 259.170009
+			rpn_cls: 3080250624.0000, rpn_box: 8672072704.0000, rcnn_cls: 0.9658, rcnn_box 0.3339
+[session 1][epoch  0][iter 5700/5864] loss: 103798313520.4342, dann_loss: 23052466524112368.0000, lr: 4.00e-06
+			fg/bg=(325/2747), time cost: 265.464787
+			rpn_cls: 0.6834, rpn_box: 0.1688, rcnn_cls: 0.8811, rcnn_box 0.2501
+[session 1][epoch  0][iter 5800/5864] loss: 137861078646.8119, dann_loss: 23888722868198060.0000, lr: 4.00e-06
+			fg/bg=(288/2784), time cost: 257.816003
+			rpn_cls: 932567104.0000, rpn_box: 0.0455, rcnn_cls: 0.8502, rcnn_box 0.2143
+save model: results/vgg16/caption_model_decay10_dw1/cap_faster_rcnn_1_0_5864.pth
+[session 1][epoch  1][iter    0/5864] loss: 762865516544.0000, dann_loss: 20702369431945216.0000, lr: 4.00e-06
+			fg/bg=(284/2788), time cost: 4.353728
+			rpn_cls: 100048592896.0000, rpn_box: 248733827072.0000, rcnn_cls: 379810217984.0000, rcnn_box 34272849920.0000
+[session 1][epoch  1][iter  100/5864] loss: 124536906187.6610, dann_loss: 24978323216027932.0000, lr: 4.00e-06
+			fg/bg=(494/2578), time cost: 263.484180
+			rpn_cls: 324753536.0000, rpn_box: 20171177984.0000, rcnn_cls: 1.1132, rcnn_box 0.3807
+[session 1][epoch  1][iter  200/5864] loss: 130855366636.5523, dann_loss: 25981192086751984.0000, lr: 4.00e-06
+			fg/bg=(405/2667), time cost: 259.573981
+			rpn_cls: 1360670336.0000, rpn_box: 1241708288.0000, rcnn_cls: 2000711552.0000, rcnn_box 145626240.0000
+[session 1][epoch  1][iter  300/5864] loss: 111003104093.6444, dann_loss: 27280820033845704.0000, lr: 4.00e-06
+			fg/bg=(486/2586), time cost: 263.689118
+			rpn_cls: 1718213120.0000, rpn_box: 4781185024.0000, rcnn_cls: 1.0610, rcnn_box 0.3710
+[session 1][epoch  1][iter  400/5864] loss: 97325823733.4218, dann_loss: 26422230342455888.0000, lr: 4.00e-06
+			fg/bg=(389/2683), time cost: 259.929942
+			rpn_cls: 2067404160.0000, rpn_box: 2506440192.0000, rcnn_cls: 171524046848.0000, rcnn_box 7923680256.0000
+[session 1][epoch  1][iter  500/5864] loss: 105941122443.9782, dann_loss: 26700752784701912.0000, lr: 4.00e-06
+			fg/bg=(384/2688), time cost: 262.605111
+			rpn_cls: 13213709312.0000, rpn_box: 31067324416.0000, rcnn_cls: 0.9773, rcnn_box 0.2757
+[session 1][epoch  1][iter  600/5864] loss: 85362611228.0941, dann_loss: 27601282524325204.0000, lr: 4.00e-06
+			fg/bg=(332/2740), time cost: 260.942452
+			rpn_cls: 4910937600.0000, rpn_box: 0.2834, rcnn_cls: 0.8507, rcnn_box 0.2046
+[session 1][epoch  1][iter  700/5864] loss: 224350478403.6832, dann_loss: 28954477869714856.0000, lr: 4.00e-06
+			fg/bg=(422/2650), time cost: 262.027949
+			rpn_cls: 10427097088.0000, rpn_box: 10901394.0000, rcnn_cls: 724602912768.0000, rcnn_box 27274704896.0000
+[session 1][epoch  1][iter  800/5864] loss: 149861657527.4917, dann_loss: 29940691145218104.0000, lr: 4.00e-06
+			fg/bg=(431/2641), time cost: 260.856978
+			rpn_cls: 355101536.0000, rpn_box: 0.1601, rcnn_cls: 29295616.0000, rcnn_box 0.2999
+[session 1][epoch  1][iter  900/5864] loss: 175225496329.0396, dann_loss: 29958343850826620.0000, lr: 4.00e-06
+			fg/bg=(519/2553), time cost: 261.420727
+			rpn_cls: 363054496.0000, rpn_box: 0.0709, rcnn_cls: 1.1569, rcnn_box 0.4244
+[session 1][epoch  1][iter 1000/5864] loss: 126400951937.6294, dann_loss: 30700207995657256.0000, lr: 4.00e-06
+			fg/bg=(369/2703), time cost: 264.022943
+			rpn_cls: 71011262464.0000, rpn_box: 109085294592.0000, rcnn_cls: 484523999232.0000, rcnn_box 19119605760.0000
+[session 1][epoch  1][iter 1100/5864] loss: 179354383640.6138, dann_loss: 32001427413186572.0000, lr: 4.00e-06
+			fg/bg=(369/2703), time cost: 259.667519
+			rpn_cls: 1687824384.0000, rpn_box: 1889913088.0000, rcnn_cls: 20266924032.0000, rcnn_box 671127936.0000
+save model: results/vgg16/caption_model_decay10_dw1/cap_faster_rcnn_1_1_7000.pth
+stopped at iterations 7000
+save model: results/vgg16/caption_model_decay10_dw1/cap_faster_rcnn_1_2_7000.pth

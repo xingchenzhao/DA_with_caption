@@ -11,7 +11,8 @@ from __future__ import print_function
 
 __sets = {}
 from datasets.pascal_voc import pascal_voc
-from datasets.coco import coco
+from datasets.coco_caption import coco
+from datasets.coco_original import coco as coco_original
 from datasets.imagenet import imagenet
 from datasets.vg import vg
 from datasets.cityscape_multi import cityscape_multi
@@ -34,6 +35,11 @@ for year in ['2014']:
         name = 'coco_{}_{}'.format(year, split)
         __sets[name] = (lambda split=split, year=year: coco(split, year))
 
+for year in ['2014']:
+    for split in ['minival', 'valminusminival', 'trainval']:
+        name = 'coco_{}_{}'.format(year, split)
+        __sets[name] = (
+            lambda split=split, year=year: coco_original(split, year))
 # Set up coco_2014_cap_<split>
 for year in ['2014']:
     for split in ['train', 'val', 'capval', 'valminuscapval', 'trainval']:

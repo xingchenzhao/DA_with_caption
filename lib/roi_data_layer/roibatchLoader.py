@@ -27,7 +27,8 @@ class roibatchLoader(data.Dataset):
                  batch_size,
                  num_classes,
                  training=True,
-                 normalize=None):
+                 normalize=None,
+                 domain=None):
         self._roidb = roidb
         self._num_classes = num_classes
         # we make the height of image consistent to trim_height, trim_width
@@ -40,6 +41,7 @@ class roibatchLoader(data.Dataset):
         self.ratio_index = ratio_index
         self.batch_size = batch_size
         self.data_size = len(self.ratio_list)
+        self.domain = domain
 
         # given the ratio_list, we want to make the ratio same for each batch.
         self.ratio_list_batch = torch.Tensor(self.data_size).zero_()
@@ -73,10 +75,14 @@ class roibatchLoader(data.Dataset):
         blobs = get_minibatch(minibatch_db, self._num_classes)
         data = torch.from_numpy(blobs['data'])
         im_info = torch.from_numpy(blobs['im_info'])
+        if self.domain is not None:
+            domain = self.domain
         if 'caption' in self._roidb[0]:
             caption = torch.LongTensor(blobs['caption'])
-            # caplen = torch.LongTensor([blobs['caplen']])
             caplen = torch.LongTensor(blobs['caplen'])
+            # caplen = torch.LongTensor([blobs['caplen']])
+            # caption = blobs['caption']
+            # caplen =
         # we need to random shuffle the bounding box.
         data_height, data_width = data.size(1), data.size(2)
         if self.training:
@@ -216,9 +222,9 @@ class roibatchLoader(data.Dataset):
             padding_data = padding_data.permute(2, 0, 1).contiguous()
             im_info = im_info.view(3)
             if 'caption' in self._roidb[0]:
-                return padding_data, im_info, gt_boxes_padding, num_boxes, caption, caplen
+                return padding_data, im_info, gt_boxes_padding, num_boxes, caption, caplen, domain if self.domain is not None else -1
             else:
-                return padding_data, im_info, gt_boxes_padding, num_boxes
+                return padding_data, im_info, gt_boxes_padding, num_boxes, domain if self.domain is not None else -1
         else:
             data = data.permute(0, 3, 1,
                                 2).contiguous().view(3, data_height,
@@ -228,9 +234,9 @@ class roibatchLoader(data.Dataset):
             gt_boxes = torch.FloatTensor([1, 1, 1, 1, 1])
             num_boxes = 0
             if 'caption' in self._roidb[0]:
-                return data, im_info, gt_boxes, num_boxes, caption, caplen
+                return data, im_info, gt_boxes, num_boxes, caption, caplen, domain if self.domain is not None else -1
             else:
-                return data, im_info, gt_boxes, num_boxes
+                return data, im_info, gt_boxes, num_boxes, domain if self.domain is not None else -1
 
     def __len__(self):
         return len(self._roidb)

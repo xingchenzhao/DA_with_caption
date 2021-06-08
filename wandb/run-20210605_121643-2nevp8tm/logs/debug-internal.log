@@ -1,0 +1,57 @@
+2021-06-05 12:16:44,975 INFO    MainThread:40185 [internal.py:wandb_internal():88] W&B internal server running at pid: 40185, started at: 2021-06-05 12:16:44.975397
+2021-06-05 12:16:44,979 DEBUG   HandlerThread:40185 [handler.py:handle_request():101] handle_request: check_version
+2021-06-05 12:16:44,979 INFO    WriterThread:40185 [datastore.py:open_for_write():77] open: /own_files/lanyi/objDet/wandb/run-20210605_121643-2nevp8tm/run-2nevp8tm.wandb
+2021-06-05 12:16:44,982 DEBUG   SenderThread:40185 [sender.py:send():122] send: header
+2021-06-05 12:16:44,982 DEBUG   SenderThread:40185 [sender.py:send():122] send: request
+2021-06-05 12:16:44,982 DEBUG   SenderThread:40185 [sender.py:send_request():131] send_request: check_version
+2021-06-05 12:16:45,048 DEBUG   SenderThread:40185 [sender.py:send():122] send: run
+2021-06-05 12:16:45,181 INFO    SenderThread:40185 [sender.py:_start_run_threads():596] run started: 2nevp8tm with start time 1622909803
+2021-06-05 12:16:45,181 DEBUG   SenderThread:40185 [sender.py:send():122] send: summary
+2021-06-05 12:16:45,182 INFO    SenderThread:40185 [sender.py:_save_file():730] saving file wandb-summary.json with policy end
+2021-06-05 12:16:45,182 DEBUG   HandlerThread:40185 [handler.py:handle_request():101] handle_request: run_start
+2021-06-05 12:16:45,192 DEBUG   HandlerThread:40185 [meta.py:__init__():34] meta init
+2021-06-05 12:16:45,192 DEBUG   HandlerThread:40185 [meta.py:__init__():48] meta init done
+2021-06-05 12:16:45,192 DEBUG   HandlerThread:40185 [meta.py:probe():190] probe
+2021-06-05 12:16:45,200 DEBUG   HandlerThread:40185 [meta.py:_setup_git():180] setup git
+2021-06-05 12:16:45,225 DEBUG   HandlerThread:40185 [meta.py:_setup_git():187] setup git done
+2021-06-05 12:16:45,226 DEBUG   HandlerThread:40185 [meta.py:_save_code():69] save code
+2021-06-05 12:16:45,235 DEBUG   HandlerThread:40185 [meta.py:_save_code():90] save code done
+2021-06-05 12:16:45,235 DEBUG   HandlerThread:40185 [meta.py:_save_patches():107] save patches
+2021-06-05 12:16:45,307 DEBUG   HandlerThread:40185 [meta.py:_save_patches():149] save patches done
+2021-06-05 12:16:45,307 DEBUG   HandlerThread:40185 [meta.py:_save_pip():52] save pip
+2021-06-05 12:16:45,308 DEBUG   HandlerThread:40185 [meta.py:_save_pip():66] save pip done
+2021-06-05 12:16:45,308 DEBUG   HandlerThread:40185 [meta.py:probe():231] probe done
+2021-06-05 12:16:45,823 DEBUG   SenderThread:40185 [sender.py:send():122] send: files
+2021-06-05 12:16:45,824 INFO    SenderThread:40185 [sender.py:_save_file():730] saving file wandb-metadata.json with policy now
+2021-06-05 12:16:45,824 INFO    SenderThread:40185 [sender.py:_save_file():730] saving file code/trainval_cap_net.py with policy now
+2021-06-05 12:16:45,825 INFO    SenderThread:40185 [sender.py:_save_file():730] saving file diff.patch with policy now
+2021-06-05 12:16:45,835 DEBUG   HandlerThread:40185 [handler.py:handle_request():101] handle_request: status
+2021-06-05 12:16:45,836 DEBUG   SenderThread:40185 [sender.py:send():122] send: request
+2021-06-05 12:16:45,837 DEBUG   SenderThread:40185 [sender.py:send_request():131] send_request: status
+2021-06-05 12:16:49,305 DEBUG   SenderThread:40185 [sender.py:send():122] send: stats
+2021-06-05 12:16:54,332 DEBUG   SenderThread:40185 [sender.py:send():122] send: stats
+2021-06-05 12:16:59,341 DEBUG   SenderThread:40185 [sender.py:send():122] send: stats
+2021-06-05 12:17:00,932 DEBUG   HandlerThread:40185 [handler.py:handle_request():101] handle_request: status
+2021-06-05 12:17:00,932 DEBUG   SenderThread:40185 [sender.py:send():122] send: request
+2021-06-05 12:17:00,932 DEBUG   SenderThread:40185 [sender.py:send_request():131] send_request: status
+2021-06-05 12:17:04,352 DEBUG   SenderThread:40185 [sender.py:send():122] send: stats
+2021-06-05 12:17:09,369 DEBUG   SenderThread:40185 [sender.py:send():122] send: stats
+2021-06-05 12:17:14,356 DEBUG   SenderThread:40185 [sender.py:send():122] send: stats
+2021-06-05 12:17:19,387 DEBUG   SenderThread:40185 [sender.py:send():122] send: stats
+2021-06-05 12:17:24,414 DEBUG   SenderThread:40185 [sender.py:send():122] send: stats
+2021-06-05 12:17:29,424 DEBUG   SenderThread:40185 [sender.py:send():122] send: stats
+2021-06-05 12:17:29,465 DEBUG   HandlerThread:40185 [handler.py:handle_request():101] handle_request: status
+2021-06-05 12:17:29,466 DEBUG   SenderThread:40185 [sender.py:send():122] send: request
+2021-06-05 12:17:29,466 DEBUG   SenderThread:40185 [sender.py:send_request():131] send_request: status
+2021-06-05 12:17:34,463 DEBUG   SenderThread:40185 [sender.py:send():122] send: stats
+2021-06-05 12:17:39,517 DEBUG   SenderThread:40185 [sender.py:send():122] send: stats
+2021-06-05 12:17:44,557 DEBUG   SenderThread:40185 [sender.py:send():122] send: stats
+2021-06-05 12:17:44,577 DEBUG   HandlerThread:40185 [handler.py:handle_request():101] handle_request: status
+2021-06-05 12:17:44,578 DEBUG   SenderThread:40185 [sender.py:send():122] send: request
+2021-06-05 12:17:44,578 DEBUG   SenderThread:40185 [sender.py:send_request():131] send_request: status
+2021-06-05 12:17:49,629 DEBUG   SenderThread:40185 [sender.py:send():122] send: stats
+2021-06-05 12:17:54,665 DEBUG   SenderThread:40185 [sender.py:send():122] send: stats
+2021-06-05 12:17:58,882 WARNING MainThread:40185 [internal.py:wandb_internal():146] Internal process interrupt: 1
+2021-06-05 12:17:59,082 WARNING MainThread:40185 [internal.py:wandb_internal():146] Internal process interrupt: 2
+2021-06-05 12:17:59,083 ERROR   MainThread:40185 [internal.py:wandb_internal():149] Internal process interrupted.
+2021-06-05 12:17:59,585 INFO    MainThread:40185 [internal.py:handle_exit():78] Internal process exited

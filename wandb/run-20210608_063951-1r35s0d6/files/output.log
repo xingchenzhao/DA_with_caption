@@ -1,0 +1,183 @@
+Using config:
+{'ANCHOR_RATIOS': [0.5, 1, 2],
+ 'ANCHOR_SCALES': [4, 8, 16, 32],
+ 'CROP_RESIZE_WITH_MAX_POOL': False,
+ 'CUDA': False,
+ 'DATA_DIR': '/own_files/lanyi/objDet/data',
+ 'DEDUP_BOXES': 0.0625,
+ 'EPS': 1e-14,
+ 'EXP_DIR': 'vgg16',
+ 'FEAT_STRIDE': [16],
+ 'GPU_ID': 0,
+ 'MATLAB': 'matlab',
+ 'MAX_NUM_GT_BOXES': 50,
+ 'MOBILENET': {'DEPTH_MULTIPLIER': 1.0,
+               'FIXED_LAYERS': 5,
+               'REGU_DEPTH': False,
+               'WEIGHT_DECAY': 4e-05},
+ 'PIXEL_MEANS': array([[[102.9801, 115.9465, 122.7717]]]),
+ 'POOLING_MODE': 'align',
+ 'POOLING_SIZE': 7,
+ 'RESNET': {'FIXED_BLOCKS': 1, 'MAX_POOL': False},
+ 'RNG_SEED': 3,
+ 'ROOT_DIR': '/own_files/lanyi/objDet',
+ 'TEST': {'BBOX_REG': True,
+          'HAS_RPN': True,
+          'MAX_SIZE': 1000,
+          'MODE': 'nms',
+          'NMS': 0.3,
+          'PROPOSAL_METHOD': 'gt',
+          'RPN_MIN_SIZE': 16,
+          'RPN_NMS_THRESH': 0.7,
+          'RPN_POST_NMS_TOP_N': 300,
+          'RPN_PRE_NMS_TOP_N': 6000,
+          'RPN_TOP_N': 5000,
+          'SCALES': [600],
+          'SVM': False},
+ 'TRAIN': {'ASPECT_GROUPING': False,
+           'BATCH_SIZE': 256,
+           'BBOX_INSIDE_WEIGHTS': [1.0, 1.0, 1.0, 1.0],
+           'BBOX_NORMALIZE_MEANS': [0.0, 0.0, 0.0, 0.0],
+           'BBOX_NORMALIZE_STDS': [0.1, 0.1, 0.2, 0.2],
+           'BBOX_NORMALIZE_TARGETS': True,
+           'BBOX_NORMALIZE_TARGETS_PRECOMPUTED': True,
+           'BBOX_REG': True,
+           'BBOX_THRESH': 0.5,
+           'BG_THRESH_HI': 0.5,
+           'BG_THRESH_LO': 0.0,
+           'BIAS_DECAY': False,
+           'BN_TRAIN': False,
+           'DISPLAY': 10,
+           'DOUBLE_BIAS': True,
+           'FG_FRACTION': 0.25,
+           'FG_THRESH': 0.5,
+           'GAMMA': 0.1,
+           'HAS_RPN': True,
+           'IMS_PER_BATCH': 1,
+           'LEARNING_RATE': 0.01,
+           'MAX_SIZE': 1000,
+           'MOMENTUM': 0.9,
+           'PROPOSAL_METHOD': 'gt',
+           'RPN_BATCHSIZE': 256,
+           'RPN_BBOX_INSIDE_WEIGHTS': [1.0, 1.0, 1.0, 1.0],
+           'RPN_CLOBBER_POSITIVES': False,
+           'RPN_FG_FRACTION': 0.5,
+           'RPN_MIN_SIZE': 8,
+           'RPN_NEGATIVE_OVERLAP': 0.3,
+           'RPN_NMS_THRESH': 0.7,
+           'RPN_POSITIVE_OVERLAP': 0.7,
+           'RPN_POSITIVE_WEIGHT': -1.0,
+           'RPN_POST_NMS_TOP_N': 2000,
+           'RPN_PRE_NMS_TOP_N': 12000,
+           'SCALES': [600],
+           'SNAPSHOT_ITERS': 5000,
+           'SNAPSHOT_KEPT': 3,
+           'SNAPSHOT_PREFIX': 'res101_faster_rcnn',
+           'STEPSIZE': [30000],
+           'SUMMARY_INTERVAL': 180,
+           'TRIM_HEIGHT': 600,
+           'TRIM_WIDTH': 600,
+           'TRUNCATED': False,
+           'USE_ALL_GT': True,
+           'USE_FLIPPED': True,
+           'USE_GT': False,
+           'WEIGHT_DECAY': 0.0005},
+ 'USE_GPU_NMS': True}
+loading annotations into memory...
+Done (t=4.34s)
+creating index...
+index created!
+Loaded dataset `coco_2014_valminusminival` for training
+Set proposal method: gt
+Appending horizontally-flipped training examples...
+coco_2014_valminusminival gt roidb loaded from /own_files/lanyi/objDet/data/cache/coco_2014_valminusminival_gt_roidb.pkl
+done
+Preparing training data...
+done
+loading annotations into memory...
+Done (t=5.26s)
+creating index...
+index created!
+before filtering, there are 71008 images...
+after filtering, there are 70370 images...
+loading annotations into memory...
+Done (t=11.39s)
+creating index...
+index created!
+loading annotations into memory...
+Done (t=0.69s)
+creating index...
+index created!
+Loaded dataset `coco_2014_train` for training
+Set proposal method: gt
+Appending horizontally-flipped training examples...
+coco_2014_train gt roidb loaded from /own_files/lanyi/objDet/data/cache/coco_2014_train_gt_roidb.pkl
+done
+Preparing training data...
+done
+loading annotations into memory...
+Done (t=13.97s)
+creating index...
+index created!
+loading annotations into memory...
+Done (t=0.70s)
+creating index...
+index created!
+before filtering, there are 165566 images...
+after filtering, there are 164162 images...
+70370 roidb entries
+Loaded dataset `clipart1k_train` for training
+Set proposal method: gt
+Appending horizontally-flipped training examples...
+clipart1k_train gt roidb loaded from /own_files/lanyi/objDet/data/cache/clipart1k_train_gt_roidb.pkl
+done
+Preparing training data...
+done
+before filtering, there are 1000 images...
+after filtering, there are 1000 images...
+Loading pretrained weights from data/pretrained_model/vgg16_caffe.pth
+loading checkpoint results/vgg16/caption_model_decay10_dw1/cap_faster_rcnn_1_6_102600.pth
+loaded checkpoint results/vgg16/caption_model_decay10_dw1/cap_faster_rcnn_1_6_102600.pth
+use glove embedding
+loading checkpoint results/vgg16/caption_model_decay10_dw1/cap_lstm_1_6_102600.pth
+loaded checkpoint results/vgg16/caption_model_decay10_dw1/cap_lstm_1_6_102600.pth
+[session 1][epoch  0][iter    0/5864] loss: 6.4939, dann_loss: 1.3985, lr: 4.00e-04
+			fg/bg=(352/2720), time cost: 13.068470
+			rpn_cls: 0.7812, rpn_box: 0.3177, rcnn_cls: 5.1327, rcnn_box 0.2623
+[session 1][epoch  0][iter  100/5864] loss: 1.9196, dann_loss: 1.3867, lr: 4.00e-04
+			fg/bg=(400/2672), time cost: 278.403965
+			rpn_cls: 0.4244, rpn_box: 0.2457, rcnn_cls: 0.8080, rcnn_box 0.2318
+[session 1][epoch  0][iter  200/5864] loss: 1.5908, dann_loss: 1.3858, lr: 4.00e-04
+			fg/bg=(463/2609), time cost: 276.196125
+			rpn_cls: 0.2492, rpn_box: 0.1235, rcnn_cls: 0.8453, rcnn_box 0.3440
+[session 1][epoch  0][iter  300/5864] loss: 1.5479, dann_loss: 1.3863, lr: 4.00e-04
+			fg/bg=(410/2662), time cost: 275.799275
+			rpn_cls: 0.1758, rpn_box: 0.0846, rcnn_cls: 0.6423, rcnn_box 0.3253
+[session 1][epoch  0][iter  400/5864] loss: 1.4729, dann_loss: 1.3884, lr: 4.00e-04
+			fg/bg=(601/2471), time cost: 277.442921
+			rpn_cls: 0.2736, rpn_box: 0.2534, rcnn_cls: 0.8396, rcnn_box 0.4173
+[session 1][epoch  0][iter  500/5864] loss: 1.4254, dann_loss: 1.3893, lr: 4.00e-04
+			fg/bg=(454/2618), time cost: 278.130127
+			rpn_cls: 0.2216, rpn_box: 0.0841, rcnn_cls: 0.6309, rcnn_box 0.3282
+[session 1][epoch  0][iter  600/5864] loss: 1.3827, dann_loss: 1.3904, lr: 4.00e-04
+			fg/bg=(542/2530), time cost: 277.654234
+			rpn_cls: 0.2754, rpn_box: 0.1862, rcnn_cls: 0.8940, rcnn_box 0.3927
+[session 1][epoch  0][iter  700/5864] loss: 1.3502, dann_loss: 1.3884, lr: 4.00e-04
+			fg/bg=(587/2485), time cost: 274.155848
+			rpn_cls: 0.1771, rpn_box: 0.1295, rcnn_cls: 0.6386, rcnn_box 0.4162
+Traceback (most recent call last):
+  File "trainval_cap_net.py", line 679, in <module>
+    rois_label, base_feat = fasterRCNN(im_data, im_info, gt_boxes, num_boxes)
+  File "/afs/cs.pitt.edu/usr0/law190/anaconda3/lib/python3.8/site-packages/torch/nn/modules/module.py", line 532, in __call__
+    result = self.forward(*input, **kwargs)
+  File "/own_files/lanyi/objDet/lib/model/faster_rcnn/faster_rcnn.py", line 57, in forward
+    rois, rpn_loss_cls, rpn_loss_bbox = self.RCNN_rpn(
+  File "/afs/cs.pitt.edu/usr0/law190/anaconda3/lib/python3.8/site-packages/torch/nn/modules/module.py", line 532, in __call__
+    result = self.forward(*input, **kwargs)
+  File "/own_files/lanyi/objDet/lib/model/rpn/rpn.py", line 77, in forward
+    rois = self.RPN_proposal((rpn_cls_prob.data, rpn_bbox_pred.data,
+  File "/afs/cs.pitt.edu/usr0/law190/anaconda3/lib/python3.8/site-packages/torch/nn/modules/module.py", line 532, in __call__
+    result = self.forward(*input, **kwargs)
+  File "/own_files/lanyi/objDet/lib/model/rpn/proposal_layer.py", line 85, in forward
+    shifts = shifts.contiguous().type_as(scores).float()
+KeyboardInterrupt

@@ -1,0 +1,227 @@
+Using config:
+{'ANCHOR_RATIOS': [0.5, 1, 2],
+ 'ANCHOR_SCALES': [4, 8, 16, 32],
+ 'CROP_RESIZE_WITH_MAX_POOL': False,
+ 'CUDA': False,
+ 'DATA_DIR': '/own_files/lanyi/objDet/data',
+ 'DEDUP_BOXES': 0.0625,
+ 'EPS': 1e-14,
+ 'EXP_DIR': 'vgg16',
+ 'FEAT_STRIDE': [16],
+ 'GPU_ID': 0,
+ 'MATLAB': 'matlab',
+ 'MAX_NUM_GT_BOXES': 50,
+ 'MOBILENET': {'DEPTH_MULTIPLIER': 1.0,
+               'FIXED_LAYERS': 5,
+               'REGU_DEPTH': False,
+               'WEIGHT_DECAY': 4e-05},
+ 'PIXEL_MEANS': array([[[102.9801, 115.9465, 122.7717]]]),
+ 'POOLING_MODE': 'align',
+ 'POOLING_SIZE': 7,
+ 'RESNET': {'FIXED_BLOCKS': 1, 'MAX_POOL': False},
+ 'RNG_SEED': 3,
+ 'ROOT_DIR': '/own_files/lanyi/objDet',
+ 'TEST': {'BBOX_REG': True,
+          'HAS_RPN': True,
+          'MAX_SIZE': 1000,
+          'MODE': 'nms',
+          'NMS': 0.3,
+          'PROPOSAL_METHOD': 'gt',
+          'RPN_MIN_SIZE': 16,
+          'RPN_NMS_THRESH': 0.7,
+          'RPN_POST_NMS_TOP_N': 300,
+          'RPN_PRE_NMS_TOP_N': 6000,
+          'RPN_TOP_N': 5000,
+          'SCALES': [600],
+          'SVM': False},
+ 'TRAIN': {'ASPECT_GROUPING': False,
+           'BATCH_SIZE': 256,
+           'BBOX_INSIDE_WEIGHTS': [1.0, 1.0, 1.0, 1.0],
+           'BBOX_NORMALIZE_MEANS': [0.0, 0.0, 0.0, 0.0],
+           'BBOX_NORMALIZE_STDS': [0.1, 0.1, 0.2, 0.2],
+           'BBOX_NORMALIZE_TARGETS': True,
+           'BBOX_NORMALIZE_TARGETS_PRECOMPUTED': True,
+           'BBOX_REG': True,
+           'BBOX_THRESH': 0.5,
+           'BG_THRESH_HI': 0.5,
+           'BG_THRESH_LO': 0.0,
+           'BIAS_DECAY': False,
+           'BN_TRAIN': False,
+           'DISPLAY': 10,
+           'DOUBLE_BIAS': True,
+           'FG_FRACTION': 0.25,
+           'FG_THRESH': 0.5,
+           'GAMMA': 0.1,
+           'HAS_RPN': True,
+           'IMS_PER_BATCH': 1,
+           'LEARNING_RATE': 0.01,
+           'MAX_SIZE': 1000,
+           'MOMENTUM': 0.9,
+           'PROPOSAL_METHOD': 'gt',
+           'RPN_BATCHSIZE': 256,
+           'RPN_BBOX_INSIDE_WEIGHTS': [1.0, 1.0, 1.0, 1.0],
+           'RPN_CLOBBER_POSITIVES': False,
+           'RPN_FG_FRACTION': 0.5,
+           'RPN_MIN_SIZE': 8,
+           'RPN_NEGATIVE_OVERLAP': 0.3,
+           'RPN_NMS_THRESH': 0.7,
+           'RPN_POSITIVE_OVERLAP': 0.7,
+           'RPN_POSITIVE_WEIGHT': -1.0,
+           'RPN_POST_NMS_TOP_N': 2000,
+           'RPN_PRE_NMS_TOP_N': 12000,
+           'SCALES': [600],
+           'SNAPSHOT_ITERS': 5000,
+           'SNAPSHOT_KEPT': 3,
+           'SNAPSHOT_PREFIX': 'res101_faster_rcnn',
+           'STEPSIZE': [30000],
+           'SUMMARY_INTERVAL': 180,
+           'TRIM_HEIGHT': 600,
+           'TRIM_WIDTH': 600,
+           'TRUNCATED': False,
+           'USE_ALL_GT': True,
+           'USE_FLIPPED': True,
+           'USE_GT': False,
+           'WEIGHT_DECAY': 0.0005},
+ 'USE_GPU_NMS': True}
+loading annotations into memory...
+Done (t=4.57s)
+creating index...
+index created!
+Loaded dataset `coco_2014_valminusminival` for training
+Set proposal method: gt
+Appending horizontally-flipped training examples...
+coco_2014_valminusminival gt roidb loaded from /own_files/lanyi/objDet/data/cache/coco_2014_valminusminival_gt_roidb.pkl
+done
+Preparing training data...
+done
+loading annotations into memory...
+Done (t=5.28s)
+creating index...
+index created!
+before filtering, there are 71008 images...
+after filtering, there are 70370 images...
+loading annotations into memory...
+Done (t=11.46s)
+creating index...
+index created!
+loading annotations into memory...
+Done (t=0.70s)
+creating index...
+index created!
+Loaded dataset `coco_2014_train` for training
+Set proposal method: gt
+Appending horizontally-flipped training examples...
+coco_2014_train gt roidb loaded from /own_files/lanyi/objDet/data/cache/coco_2014_train_gt_roidb.pkl
+done
+Preparing training data...
+done
+loading annotations into memory...
+Done (t=13.94s)
+creating index...
+index created!
+loading annotations into memory...
+Done (t=0.69s)
+creating index...
+index created!
+before filtering, there are 165566 images...
+after filtering, there are 164162 images...
+70370 roidb entries
+Loaded dataset `clipart1k_train` for training
+Set proposal method: gt
+Appending horizontally-flipped training examples...
+clipart1k_train gt roidb loaded from /own_files/lanyi/objDet/data/cache/clipart1k_train_gt_roidb.pkl
+done
+Preparing training data...
+done
+before filtering, there are 1000 images...
+after filtering, there are 1000 images...
+Loading pretrained weights from data/pretrained_model/vgg16_caffe.pth
+loading checkpoint results/vgg16/caption_model_decay10_dw1/cap_faster_rcnn_1_9_164160.pth
+loaded checkpoint results/vgg16/caption_model_decay10_dw1/cap_faster_rcnn_1_9_164160.pth
+use glove embedding
+loading checkpoint results/vgg16/caption_model_decay10_dw1/cap_lstm_1_9_164160.pth
+loaded checkpoint results/vgg16/caption_model_decay10_dw1/cap_lstm_1_9_164160.pth
+[session 1][epoch  0][iter    0/5864] loss: 6.8360, dann_loss: 1.3835, lr: 4.00e-05
+			fg/bg=(367/2705), time cost: 16.032119
+			rpn_cls: 0.8034, rpn_box: 0.5748, rcnn_cls: 5.2022, rcnn_box 0.2556
+[session 1][epoch  0][iter  100/5864] loss: 2.7810, dann_loss: 1.3868, lr: 4.00e-05
+			fg/bg=(268/2804), time cost: 265.571050
+			rpn_cls: 0.4632, rpn_box: 0.0986, rcnn_cls: 0.5896, rcnn_box 0.2003
+[session 1][epoch  0][iter  200/5864] loss: 1.7648, dann_loss: 1.3893, lr: 4.00e-05
+			fg/bg=(452/2620), time cost: 265.377749
+			rpn_cls: 0.3954, rpn_box: 0.1449, rcnn_cls: 0.8473, rcnn_box 0.3333
+[session 1][epoch  0][iter  300/5864] loss: 1.6665, dann_loss: 1.3917, lr: 4.00e-05
+			fg/bg=(598/2474), time cost: 265.054774
+			rpn_cls: 0.3556, rpn_box: 0.1916, rcnn_cls: 1.0625, rcnn_box 0.4273
+[session 1][epoch  0][iter  400/5864] loss: 1.6708, dann_loss: 1.3929, lr: 4.00e-05
+			fg/bg=(478/2594), time cost: 260.699854
+			rpn_cls: 0.3031, rpn_box: 0.1431, rcnn_cls: 0.9548, rcnn_box 0.3618
+[session 1][epoch  0][iter  500/5864] loss: 1.6545, dann_loss: 1.3921, lr: 4.00e-05
+			fg/bg=(480/2592), time cost: 263.032537
+			rpn_cls: 0.3671, rpn_box: 0.3450, rcnn_cls: 0.9449, rcnn_box 0.3581
+[session 1][epoch  0][iter  600/5864] loss: 1.6332, dann_loss: 1.3930, lr: 4.00e-05
+			fg/bg=(506/2566), time cost: 265.089643
+			rpn_cls: 0.3073, rpn_box: 0.1677, rcnn_cls: 0.9339, rcnn_box 0.3984
+[session 1][epoch  0][iter  700/5864] loss: 1.6064, dann_loss: 1.3929, lr: 4.00e-05
+			fg/bg=(424/2648), time cost: 262.775679
+			rpn_cls: 0.2841, rpn_box: 0.1644, rcnn_cls: 0.8441, rcnn_box 0.3169
+[session 1][epoch  0][iter  800/5864] loss: 1.6912, dann_loss: 1.3914, lr: 4.00e-05
+			fg/bg=(648/2424), time cost: 261.488248
+			rpn_cls: 0.2760, rpn_box: 0.1290, rcnn_cls: 1.0823, rcnn_box 0.5081
+[session 1][epoch  0][iter  900/5864] loss: 1.5990, dann_loss: 1.3880, lr: 4.00e-05
+			fg/bg=(558/2514), time cost: 262.792019
+			rpn_cls: 0.3454, rpn_box: 0.2011, rcnn_cls: 1.0578, rcnn_box 0.3992
+[session 1][epoch  0][iter 1000/5864] loss: 1.6018, dann_loss: 1.3896, lr: 4.00e-05
+			fg/bg=(528/2544), time cost: 266.033026
+			rpn_cls: 0.2458, rpn_box: 0.1710, rcnn_cls: 0.9021, rcnn_box 0.3910
+[session 1][epoch  0][iter 1100/5864] loss: 1.5762, dann_loss: 1.3902, lr: 4.00e-05
+			fg/bg=(509/2563), time cost: 261.763780
+			rpn_cls: 0.2575, rpn_box: 0.1089, rcnn_cls: 0.9255, rcnn_box 0.3958
+[session 1][epoch  0][iter 1200/5864] loss: 1.5503, dann_loss: 1.3880, lr: 4.00e-05
+			fg/bg=(447/2625), time cost: 261.692771
+			rpn_cls: 0.2276, rpn_box: 0.2239, rcnn_cls: 0.6682, rcnn_box 0.3106
+[session 1][epoch  0][iter 1300/5864] loss: 1.5758, dann_loss: 1.3932, lr: 4.00e-05
+			fg/bg=(438/2634), time cost: 264.979508
+			rpn_cls: 0.2081, rpn_box: 0.1334, rcnn_cls: 0.7657, rcnn_box 0.3208
+[session 1][epoch  0][iter 1400/5864] loss: 1.5351, dann_loss: 1.3906, lr: 4.00e-05
+			fg/bg=(554/2518), time cost: 263.699883
+			rpn_cls: 0.2481, rpn_box: 0.1971, rcnn_cls: 0.9339, rcnn_box 0.4257
+[session 1][epoch  0][iter 1500/5864] loss: 1.5262, dann_loss: 1.3899, lr: 4.00e-05
+			fg/bg=(415/2657), time cost: 263.767752
+			rpn_cls: 0.1590, rpn_box: 0.0775, rcnn_cls: 0.5641, rcnn_box 0.3124
+[session 1][epoch  0][iter 1600/5864] loss: 1.5342, dann_loss: 1.3882, lr: 4.00e-05
+			fg/bg=(628/2444), time cost: 263.756490
+			rpn_cls: 0.3163, rpn_box: 0.2254, rcnn_cls: 0.9638, rcnn_box 0.4606
+[session 1][epoch  0][iter 1700/5864] loss: 1.5732, dann_loss: 1.3908, lr: 4.00e-05
+			fg/bg=(618/2454), time cost: 262.284750
+			rpn_cls: 0.2818, rpn_box: 0.1978, rcnn_cls: 0.9772, rcnn_box 0.4327
+[session 1][epoch  0][iter 1800/5864] loss: 1.5364, dann_loss: 1.3936, lr: 4.00e-05
+			fg/bg=(431/2641), time cost: 263.383815
+			rpn_cls: 0.2728, rpn_box: 0.1370, rcnn_cls: 0.7894, rcnn_box 0.3349
+[session 1][epoch  0][iter 1900/5864] loss: 1.5324, dann_loss: 1.3903, lr: 4.00e-05
+			fg/bg=(508/2564), time cost: 264.494820
+			rpn_cls: 0.2450, rpn_box: 0.1151, rcnn_cls: 0.7438, rcnn_box 0.3661
+[session 1][epoch  0][iter 2000/5864] loss: 1.5116, dann_loss: 1.3888, lr: 4.00e-05
+			fg/bg=(439/2633), time cost: 264.699278
+			rpn_cls: 0.2470, rpn_box: 0.1134, rcnn_cls: 0.6004, rcnn_box 0.3024
+[session 1][epoch  0][iter 2100/5864] loss: 1.4735, dann_loss: 1.3888, lr: 4.00e-05
+			fg/bg=(557/2515), time cost: 262.634562
+			rpn_cls: 0.2762, rpn_box: 0.1725, rcnn_cls: 0.8615, rcnn_box 0.3697
+[session 1][epoch  0][iter 2200/5864] loss: 1.4462, dann_loss: 1.3904, lr: 4.00e-05
+			fg/bg=(483/2589), time cost: 263.558821
+			rpn_cls: 0.2228, rpn_box: 0.1383, rcnn_cls: 0.6857, rcnn_box 0.3430
+[session 1][epoch  0][iter 2300/5864] loss: 1.4637, dann_loss: 1.3940, lr: 4.00e-05
+			fg/bg=(528/2544), time cost: 261.742563
+			rpn_cls: 0.2540, rpn_box: 0.1179, rcnn_cls: 0.8549, rcnn_box 0.3813
+[session 1][epoch  0][iter 2400/5864] loss: 1.4892, dann_loss: 1.3914, lr: 4.00e-05
+			fg/bg=(527/2545), time cost: 262.882493
+			rpn_cls: 0.2311, rpn_box: 0.1068, rcnn_cls: 0.7029, rcnn_box 0.3914
+Exception ignored in: Exception in thread <function _releaseLock at 0x7fce0f12f790>
+Thread-4Traceback (most recent call last):
+:
+  File "/afs/cs.pitt.edu/usr0/law190/anaconda3/lib/python3.8/logging/__init__.py", line 223, in _releaseLock
+Traceback (most recent call last):
+  File "/afs/cs.pitt.edu/usr0/law190/anaconda3/lib/python3.8/threading.py", line 932, in _bootstrap_inner
+    def _releaseLock():
+KeyboardInterrupt: 
+    
